@@ -214,6 +214,12 @@
   </section>
 
   <section id="v-map">
+    <div class="card" style="padding:13px 14px">
+      <div style="font-weight:700;font-size:14px">オフライン準備</div>
+      <div style="font-size:12.5px;color:#4a4a4f;margin-top:4px">演目の顔写真78枚を保存します（合計30MBほど）。Wi-Fiで一度押しておくと、現地で電波が細くても写真が出ます。</div>
+      <div id="dlstate" style="font-size:12px;color:#6b6b70;margin:6px 0 8px"></div>
+      <button id="dlbtn" style="width:100%;appearance:none;font:inherit;font-size:14px;font-weight:700;border:0;border-radius:10px;padding:11px;background:var(--blue);color:#fff;cursor:pointer">写真をまとめて保存</button>
+    </div>
     <div class="mapwrap">
       <img src="assets/parkmap.jpg" alt="駿府城公園エリアマップ" loading="lazy">
       <div class="legend" id="legend"></div>
@@ -249,7 +255,7 @@
 <script src="data.js"></script>
 <script>
 (function () {
-  var VER = 'v14';
+  var VER = 'v16';
   var D = window.DATA;
   var OPEN = 630;   // 10:30 到着
   var CLOSE = 1140; // 19:00 解散
@@ -618,6 +624,49 @@
   function dayShows(n) {
     return shows().filter(function (sh) { return sh.a === n; }).sort(function (x, y) { return mins(x.t) - mins(y.t); });
   }
+  // --- 写真の事前保存 ---
+  var PHOTO_CACHE = 'daidogei2026-photos';
+  function photoUrls() { return Object.keys(D.artists).map(function (n) { return D.artists[n].img; }).filter(Boolean); }
+  function dlState() {
+    if (!window.caches) return Promise.resolve(-1);
+    return caches.open(PHOTO_CACHE).then(function (c) { return c.keys(); })
+      .then(function (keys) { return keys.length; }).catch(function () { return -1; });
+  }
+  function renderDlState(n) {
+    var el = document.getElementById('dlstate');
+    if (!el) return;
+    var total = photoUrls().length;
+    if (n === -1) { el.textContent = 'このブラウザでは保存できません（HTTPSが必要）'; return; }
+    el.textContent = n >= total
+      ? '保存済み（' + n + '枚）。圏外でも写真が出ます。'
+      : n > 0 ? n + ' / ' + total + '枚を保存済み' : '未保存。写真は通信できるときだけ出ます。';
+  }
+  function downloadPhotos() {
+    var btn = document.getElementById('dlbtn');
+    var urls = photoUrls();
+    if (!window.caches) { renderDlState(-1); return; }
+    btn.disabled = true;
+    caches.open(PHOTO_CACHE).then(function (cache) {
+      var i = 0, fail = 0;
+      function step() {
+        if (i >= urls.length) {
+          btn.disabled = false;
+          btn.textContent = fail ? 'もう一度押す（' + fail + '枚失敗）' : '写真をまとめて保存';
+          return dlState().then(renderDlState);
+        }
+        var u = urls[i++];
+        btn.textContent = '保存中… ' + i + ' / ' + urls.length;
+        cache.match(u).then(function (hit) {
+          if (hit) return null;
+          return fetch(u, { mode: 'no-cors' }).then(function (res) {
+            if (res && (res.ok || res.type === 'opaque')) return cache.put(u, res);
+          });
+        }).catch(function () { fail++; }).then(step);
+      }
+      step();
+    });
+  }
+
   var sheetNum = null;
   function openSheet(n) {
     sheetNum = String(n);
@@ -708,10 +757,14 @@
   }
   document.getElementById('open-route').addEventListener('click', function () { go('fix'); });
   document.getElementById('nowbtn').addEventListener('click', function () { nowOpen = !nowOpen; render(); });
+  document.getElementById('dlbtn').addEventListener('click', downloadPhotos);
+  dlState().then(renderDlState);
 
   renderLegend(); renderMemo(); render();
   document.getElementById('ver').textContent = '表示バージョン ' + VER;
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+  // 開きっぱなしでもボタンの時刻は進む。候補は押し直すと作り直す。
+  setInterval(function () { if (!nowOpen) renderNowBtn(); }, 60000);
   var h = (location.hash || '').replace('#', '');
   if (['fix', 'find', 'time', 'plan', 'map'].indexOf(h) > -1) go(h);
 })();
