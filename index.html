@@ -51,6 +51,8 @@
   .stage i { font-style: normal; opacity: .78; margin-right: 4px; }
   .stage.city { background: #6d5aa6; }
   .stage.eki { background: #a25a00; }
+  .stage.suruga { background: #a25a00; }
+  .stage.shimizu { background: #8a3b3b; }
   .move { padding: 7px 14px; font-size: 12px; color: var(--sub); background: #f2efe9; border-bottom: 1px solid var(--line); }
   .move::before { content: "↓ "; }
   .move.bad { color: var(--warn); font-weight: 700; }
@@ -114,6 +116,8 @@
   .legend .lg.hakubutsu b { background: var(--hakubutsu); }
   .legend .lg.city b { background: #6d5aa6; }
   .legend .lg.eki b { background: #a25a00; }
+  .legend .lg.suruga b { background: #a25a00; }
+  .legend .lg.shimizu b { background: #8a3b3b; }
   .legend .lg.gym b { background: var(--gym); }
   .legend .lg span.p { color: var(--sub); font-size: 11.5px; margin-left: 6px; }
 
@@ -182,7 +186,7 @@
       <img src="assets/parkmap.jpg" alt="駿府城公園エリアマップ" loading="lazy">
       <div class="legend" id="legend"></div>
     </div>
-    <p class="lead" style="margin-top:10px">園内は端から端まで徒歩5分。歴博エリア（9-12）まで徒歩10分。市街地（13-27）は常磐公園方面まで徒歩15分、駅周辺（28-31）は徒歩20分。</p>
+    <p class="lead" style="margin-top:10px">園内は端から端まで徒歩5分。歴博エリア（9-12）まで徒歩10分。市街地（13-28）は徒歩15分前後。駿河区（29）と清水区（30-31）は徒歩圏外で、静岡駅から電車・バス。</p>
     <div class="memo" id="memo"></div>
     <div class="memo">
       <h3>有料ステージ</h3>
@@ -220,20 +224,28 @@
   var mins = function (t) { var p = t.split(':'); return (+p[0]) * 60 + (+p[1]); };
   var hm = function (m) { return ('0' + Math.floor(m / 60)).slice(-2) + ':' + ('0' + (m % 60)).slice(-2); };
 
-  // 徒歩の目安（分）。実際の混雑は見ていない固定値。
-  var ZRANK = { park: 0, hakubutsu: 1, gym: 2, city: 3, eki: 4 };
-  var ZIN = { park: 4, hakubutsu: 2, gym: 0, city: 5, eki: 3 };
+  // 会場間の移動の目安。すべて固定値で、実際の混雑は見ていない。
+  // 駿河区・清水区の会場は徒歩圏外なので電車・バス扱いにする。
+  var ZRANK = { park: 0, hakubutsu: 1, gym: 2, city: 3, eki: 4, suruga: 5, shimizu: 6 };
+  var ZIN = { park: 4, hakubutsu: 2, gym: 0, city: 5, eki: 3, suruga: 5, shimizu: 5 };
   var ZOUT = {
     'hakubutsu-park': 10, 'gym-park': 6, 'city-park': 15, 'eki-park': 20,
     'gym-hakubutsu': 16, 'city-hakubutsu': 12, 'eki-hakubutsu': 18,
-    'city-gym': 18, 'eki-gym': 22, 'city-eki': 10
+    'city-gym': 18, 'eki-gym': 22, 'city-eki': 12
   };
-  function walk(a, b) {
-    if (!a || !b || a === b) return 0;
+  var TRANSIT = { suruga: 25, shimizu: 55 };  // 静岡駅からの乗り換え込みの目安
+  function leg(a, b) {
+    if (!a || !b || a === b) return { m: 0, rail: false };
     var A = stageById[a], B = stageById[b];
-    if (A.zone === B.zone) return ZIN[A.zone] || 5;
-    return ZOUT[[A.zone, B.zone].sort().join('-')] || 15;
+    if (A.zone === B.zone) return { m: ZIN[A.zone] || 5, rail: false };
+    var key = [A.zone, B.zone].sort().join('-');
+    if (ZOUT[key] !== undefined) return { m: ZOUT[key], rail: false };
+    var far = TRANSIT[A.zone] ? A : B;
+    var other = far === A ? B : A;
+    var local = other.zone === 'park' ? 10 : (other.zone === 'eki' ? 5 : 5);
+    return { m: TRANSIT[far.zone] + local, rail: true };
   }
+  function walk(a, b) { return leg(a, b).m; }
 
   // ---- pinned ----
   var KEY = 'daidogei2026.pins.v2';
@@ -253,7 +265,11 @@
     }).filter(Boolean).sort(function (a, b) { return mins(a.t) - mins(b.t); });
   }
 
-  function wl(w) { return w === null ? '' : (w ? '徒歩' + w + '分' : '同じ場所'); }
+  function wl(m, rail) {
+    if (m === null || m === undefined) return '';
+    if (!m) return '同じ場所';
+    return rail ? '電車・バス約' + m + '分' : '徒歩' + m + '分';
+  }
   function stars(k) {
     if (!k) return '';
     if (k >= 3) return '<span class="stars">★★★</span>';
@@ -277,6 +293,7 @@
   }
 
   // 区間 [fromM, toM] に、移動込みで収まる演目
+  // 区間に収まる演目。徒歩と「見終わってから次の固定までの空き」も返す
   function feasible(fromM, toM, fromStage, toStage) {
     return D.shows.filter(function (sh) {
       if (has(sh.s, sh.t)) return false;
@@ -285,23 +302,43 @@
       var t = mins(sh.t);
       return t >= fromM + w1 && t + 30 + w2 <= toM;
     }).map(function (sh) {
+      var l1 = leg(fromStage, sh.s), l2 = leg(sh.s, toStage);
+      var w1 = l1.m, w2 = l2.m;
+      // 電車・バスの会場は候補に出さない。自分で固定したときだけルートに乗る。
+      if (l1.rail || l2.rail) return null;
       return {
         sh: sh,
-        w: fromStage ? walk(fromStage, sh.s) : (toStage ? walk(sh.s, toStage) : null),
+        w1: w1,
+        w2: w2,
+        rail: fromStage ? l1.rail : l2.rail,
+        w: fromStage ? w1 : (toStage ? w2 : w1),
+        idle: toStage ? toM - (mins(sh.t) + 30 + w2) : 0,
         kid: (D.artists[sh.a] || {}).kid || 0
       };
-    }).sort(function (a, b) {
-      return (b.kid - a.kid) || ((a.w || 0) - (b.w || 0)) || (mins(a.sh.t) - mins(b.sh.t));
+    }).filter(Boolean);
+  }
+  // fill: 空きを埋める候補（終わりが遅い順） / next: この後（時刻順）
+  function sortCands(list, mode) {
+    return list.sort(function (a, b) {
+      if (b.kid !== a.kid) return b.kid - a.kid;
+      if (mode === 'fill') {
+        if (a.idle !== b.idle) return a.idle - b.idle;
+        if (a.w !== b.w) return a.w - b.w;
+        return mins(a.sh.t) - mins(b.sh.t);
+      }
+      if (mins(a.sh.t) !== mins(b.sh.t)) return mins(a.sh.t) - mins(b.sh.t);
+      return a.w - b.w;
     });
   }
 
-  function gapBlock(title, sub, list, limit) {
+  function gapBlock(title, sub, list, limit, mode) {
     if (!list.length) return '';
-    var shown = list.slice(0, limit || 6);
+    var shown = sortCands(list, mode || 'fill').slice(0, limit || 6);
     var html = '<div class="gap"><div class="card"><h4>' + title + '<span>' + sub + '</span></h4>';
     html += shown.map(function (c) {
-      var extra = [wl(c.w), c.sh.t + '-' + c.sh.e].filter(Boolean).join('・');
-      return showRow(c.sh, extra);
+      var parts = [wl(c.w, c.rail), c.sh.t + '-' + c.sh.e];
+      if (mode !== 'next' && c.idle > 0) parts.push('見終わりから' + c.idle + '分あく');
+      return showRow(c.sh, parts.filter(Boolean).join('・'));
     }).join('');
     if (list.length > shown.length) html += '<div class="more">他 ' + (list.length - shown.length) + '本</div>';
     return html + '</div></div>';
@@ -313,10 +350,10 @@
     var lead = document.getElementById('fixlead');
     if (!r.length) {
       lead.textContent = 'まず1本、絶対に見たいものを固定する。固定した瞬間、その前後で「時間的に間に合う演目」だけに絞られる。';
-      var early = feasible(OPEN, CLOSE, null, null).slice(0, 3);
+      var early = sortCands(feasible(OPEN, CLOSE, null, null), 'next').slice(0, 3);
       el.innerHTML = '<div class="sec-title">10:30 着 ・ ここから始められるもの</div>' +
         '<div class="card">' + early.map(function (c) {
-          return showRow(c.sh, [wl(c.w), c.sh.t + '-' + c.sh.e].filter(Boolean).join('・'));
+          return showRow(c.sh, [wl(c.w, c.rail), c.sh.t + '-' + c.sh.e].filter(Boolean).join('・'));
         }).join('') + '</div>' +
         '<p class="lead" style="margin-top:12px">11:00の枠を開いて★3から選ぶのが早い。「探す」タブへ。</p>';
       return;
@@ -325,24 +362,26 @@
       '<br>黄色い枠が「そこに入る候補」。押せばルートに挟まる。';
     var html = '';
     // 最初の前
-    html += gapBlock('10:30 着 → ' + r[0].t, '最初の1本まで', feasible(OPEN, mins(r[0].t), null, r[0].s), 4);
+    html += gapBlock('10:30 着 → ' + r[0].t, '最初の1本まで', feasible(OPEN, mins(r[0].t), null, r[0].s), 4, 'fill');
     for (var i = 0; i < r.length; i++) {
       var sh = r[i], a = D.artists[sh.a] || { jp: sh.a, kid: 0, why: '' };
       html += '<div class="card">' + showRow(sh, sh.t + '-' + sh.e + '（30分）', true) + '</div>';
       if (i < r.length - 1) {
         var nx = r[i + 1];
-        var w = walk(sh.s, nx.s);
+        var lg = leg(sh.s, nx.s);
+        var w = lg.m;
         var gap = mins(nx.t) - (mins(sh.t) + 30);
         html += '<div class="move' + (gap < w ? ' bad' : '') + '">' + stageById[sh.s].short + ' → ' + stageById[nx.s].short +
-          '：' + wl(w) + (gap < w ? '（' + gap + '分しかない・移動が間に合わない）' : '（' + gap + '分あく）') + '</div>';
-        html += gapBlock(sh.t + ' の後 → ' + nx.t, stageById[sh.s].short + '発 ' + wl(w),
-          feasible(mins(sh.t) + 30, mins(nx.t), sh.s, nx.s), 4);
+          '：' + wl(w, lg.rail) + (gap < w ? '（' + gap + '分しかない・移動が間に合わない）'
+            : gap === w ? '（移動してちょうど）' : '（移動後に' + (gap - w) + '分あく）') + '</div>';
+        html += gapBlock(sh.t + ' の後 → ' + nx.t, stageById[sh.s].short + '発 ' + wl(w, lg.rail),
+          feasible(mins(sh.t) + 30, mins(nx.t), sh.s, nx.s), 4, 'fill');
       }
     }
     // 最後の後
     var last = r[r.length - 1];
     html += gapBlock(last.t + ' の後 → 19:00', stageById[last.s].short + '発',
-      feasible(mins(last.t) + 30, CLOSE, last.s, null), 6);
+      feasible(mins(last.t) + 30, CLOSE, last.s, null), 8, 'next');
     el.innerHTML = html;
   }
 
