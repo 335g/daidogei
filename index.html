@@ -189,6 +189,7 @@
 <main>
   <section id="v-fix" class="on">
     <p class="lead" id="fixlead"></p>
+    <button class="nowbtn" id="nowbtn"></button>
     <div id="route"></div>
   </section>
 
@@ -248,7 +249,7 @@
 <script src="data.js"></script>
 <script>
 (function () {
-  var VER = 'v12';
+  var VER = 'v14';
   var D = window.DATA;
   var OPEN = 630;   // 10:30 到着
   var CLOSE = 1140; // 19:00 解散
@@ -411,6 +412,42 @@
     return html + '</div></div>';
   }
 
+  function nowMin() {
+    var t = new Date(Date.now() + (new Date().getTimezoneOffset() + 540) * 60000);
+    return t.getHours() * 60 + t.getMinutes();
+  }
+  var nowOpen = false;
+  function nowPanel() {
+    var now = nowMin();
+    var r = route();
+    var origin = null, fromM = now;
+    for (var i = 0; i < r.length; i++) {
+      if (mins(r[i].t) <= now) { origin = r[i].s; fromM = Math.max(now, mins(r[i].t) + 30); }
+    }
+    var until = fromM + 120;
+    var list = shows().filter(function (sh) {
+      if (has(sh.s, sh.t)) return false;
+      var lg = leg(origin, sh.s);
+      if (lg.rail) return false;
+      var t = mins(sh.t);
+      return t >= fromM + lg.m && t <= until;
+    }).map(function (sh) {
+      var lg = leg(origin, sh.s);
+      return { sh: sh, w: lg.m, rail: lg.rail, at: mins(sh.t) + lg.m, kid: (D.artists[sh.a] || {}).kid || 0 };
+    }).sort(function (a, b) { return a.at - b.at; }).slice(0, 5);
+
+    var head = 'いま ' + hm(now) + ' ・ ' + (origin ? stageById[origin].short + '発' : '現在地から');
+    var html = '<div class="gap"><div class="card"><h4>' + head + '<span>2時間のうちに行けるもの</span></h4>';
+    if (!list.length) {
+      html += '<div class="none">この先2時間で、移動込みで間に合うものはない。休憩か屋台へ。</div></div></div>';
+      return html;
+    }
+    html += list.map(function (c) {
+      return showRow(c.sh, [wl(c.w, c.rail), c.sh.t + '-' + c.sh.e].filter(Boolean).join('・'));
+    }).join('') + '</div></div>';
+    return html;
+  }
+
   function renderFix() {
     var r = route();
     var el = document.getElementById('route');
@@ -420,7 +457,8 @@
       var early = sortCands(feasible(OPEN, CLOSE, null, null), 'next')
         .filter(function (c) { var z = stageById[c.sh.s].zone; return z !== 'suruga' && z !== 'shimizu'; })
         .slice(0, 3);
-      el.innerHTML = '<div class="sec-title">10:30 着 ・ ここから始められるもの</div>' +
+      el.innerHTML = (nowOpen ? nowPanel() : '') +
+        '<div class="sec-title">10:30 着 ・ ここから始められるもの</div>' +
         '<div class="card">' + early.map(function (c) {
           return showRow(c.sh, c.sh.t + '-' + c.sh.e + '・' + stageById[c.sh.s].pos);
         }).join('') + '</div>' +
@@ -429,7 +467,7 @@
     }
     lead.innerHTML = r.length + '本固定 ・ ' + r[0].t + '〜' + hm(mins(r[r.length - 1].t) + 30) +
       '<br>黄色い枠が「そこに入る候補」。押せばルートに挟まる。';
-    var html = '';
+    var html = nowOpen ? nowPanel() : '';
     // 最初の前
     html += gapBlock('10:30 着 → ' + r[0].t, '最初の1本まで', feasible(OPEN, mins(r[0].t), null, r[0].s), 5, 'fill', [r[0].s]);
     for (var i = 0; i < r.length; i++) {
@@ -454,6 +492,16 @@
     html += gapBlock(last.t + ' の後 → ' + hm(afterTo) + '（2時間）', stageById[last.s].short + '発',
       feasible(mins(last.t) + 30, afterTo, last.s, null), 6, 'next', [last.s]);
     el.innerHTML = html;
+  }
+
+  function renderNowBtn() {
+    var b = document.getElementById('nowbtn');
+    var n = nowMin();
+    b.innerHTML = nowOpen
+      ? '「いま」の候補を閉じる'
+      : 'いま ' + hm(n) + ' から見られるもの' +
+        '<small>' + (route().length ? '直前に見た会場を起点にする' : '時間順に最大5本') + '</small>';
+    b.classList.toggle('on', nowOpen);
   }
 
   function renderCnt() {
@@ -615,7 +663,7 @@
     }).join('');
   }
   function render() {
-    renderDays(); renderFix(); renderCnt(); renderStages(); renderPlans(); renderMemo();
+    renderDays(); renderFix(); renderNowBtn(); renderCnt(); renderStages(); renderPlans(); renderMemo();
     document.getElementById('slots').innerHTML = slots();
     document.getElementById('slotlist').innerHTML = slotList();
     document.getElementById('artists').innerHTML = artistList();
@@ -659,6 +707,7 @@
     window.scrollTo(0, 0);
   }
   document.getElementById('open-route').addEventListener('click', function () { go('fix'); });
+  document.getElementById('nowbtn').addEventListener('click', function () { nowOpen = !nowOpen; render(); });
 
   renderLegend(); renderMemo(); render();
   document.getElementById('ver').textContent = '表示バージョン ' + VER;
