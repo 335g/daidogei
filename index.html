@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>11/1(日) 駿府城公園 キッズ攻略 | 大道芸ワールドカップ2026</title>
+<title>大道芸ワールドカップin静岡 2026 スケジュール | 駿府城公園エリア</title>
 <meta name="theme-color" content="#0f6fb5">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤹</text></svg>">
 <style>
@@ -21,6 +21,12 @@
   header { padding: 16px 16px 12px; background: var(--blue); color: #fff; }
   header h1 { margin: 0; font-size: 19px; line-height: 1.35; }
   header p { margin: 4px 0 0; font-size: 12.5px; opacity: .88; }
+  .days { display: flex; gap: 6px; margin-top: 10px; }
+  .days button {
+    appearance: none; font: inherit; font-size: 12.5px; padding: 5px 12px; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.5); background: transparent; color: #fff; cursor: pointer;
+  }
+  .days button.on { background: #fff; color: var(--blue); font-weight: 700; border-color: #fff; }
   nav {
     position: sticky; top: 0; z-index: 20; display: grid; grid-template-columns: repeat(5, 1fr);
     background: rgba(246,244,240,.97); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
@@ -167,15 +173,16 @@
 <body>
 
 <header>
-  <h1>11/1(日) 駿府城公園 キッズ攻略</h1>
-  <p>大道芸ワールドカップin静岡 2026 ・ 10:30着 / 19:00解散 ・ 6歳児と歩く</p>
+  <h1>大道芸ワールドカップin静岡 2026</h1>
+  <p>駿府城公園エリア ・ 6歳児と歩く ・ 10:30着 / 19:00解散</p>
+  <div class="days" id="days"></div>
 </header>
 
 <nav>
   <button data-v="fix" class="on">決める</button>
   <button data-v="find">探す</button>
   <button data-v="time">時間表</button>
-  <button data-v="plan">3案</button>
+  <button data-v="plan">プラン</button>
   <button data-v="map">地図</button>
 </nav>
 
@@ -233,7 +240,7 @@
 </div>
 
 <footer>
-  公式PDF（schedule2026_1014.pdf DAY2）から作成。演目は各30分。<br>
+  公式PDF（schedule2026_1014.pdf のDAY1-4）とアーティストページから作成。演目は各30分。<br>
   出演者・時間は変更される場合があります。現地の掲示を優先してください。
   <div id="ver" style="margin-top:6px;opacity:.7"></div>
 </footer>
@@ -241,14 +248,30 @@
 <script src="data.js"></script>
 <script>
 (function () {
-  var VER = 'v11';
+  var VER = 'v12';
   var D = window.DATA;
   var OPEN = 630;   // 10:30 到着
   var CLOSE = 1140; // 19:00 解散
   var stageById = {};
   D.stages.forEach(function (s) { stageById[s.id] = s; });
+
+  // 今日が会期中なら今日、その日のプログラムが終わっていれば翌日を初期表示にする。
+  var DI = (function () {
+    var t = new Date(Date.now() + (new Date().getTimezoneOffset() + 540) * 60000);
+    var key = ('0' + (t.getMonth() + 1)).slice(-2) + '-' + ('0' + t.getDate()).slice(-2);
+    var i = D.days.map(function (d) { return d.id; }).indexOf(key);
+    if (i < 0) return D.days.map(function (d) { return d.id; }).indexOf('11-01');
+    if (t.getHours() >= 19 && i + 1 < D.days.length) return i + 1;
+    return i;
+  })();
+  function dayInfo() { return D.days[DI]; }
+  function shows() { return dayInfo().shows; }
   var byStage = {};
-  D.shows.forEach(function (sh) { (byStage[sh.s] = byStage[sh.s] || []).push(sh); });
+  function reindex() {
+    byStage = {};
+    shows().forEach(function (sh) { (byStage[sh.s] = byStage[sh.s] || []).push(sh); });
+  }
+  reindex();
 
   var mins = function (t) { var p = t.split(':'); return (+p[0]) * 60 + (+p[1]); };
   var hm = function (m) { return ('0' + Math.floor(m / 60)).slice(-2) + ':' + ('0' + (m % 60)).slice(-2); };
@@ -281,17 +304,19 @@
   var pins = [];
   try { pins = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { pins = []; }
   var save = function () { try { localStorage.setItem(KEY, JSON.stringify(pins)); } catch (e) {} };
-  var has = function (s, t) { return pins.indexOf(s + '|' + t) > -1; };
+  var keyOf = function (s, t) { return dayInfo().id + '|' + s + '|' + t; };
+  var has = function (s, t) { return pins.indexOf(keyOf(s, t)) > -1; };
   function toggle(s, t) {
-    var k = s + '|' + t, i = pins.indexOf(k);
+    var k = keyOf(s, t), i = pins.indexOf(k);
     if (i > -1) pins.splice(i, 1); else pins.push(k);
     save(); render();
     if (sheetNum) renderSheet();
   }
   function route() {
     return pins.map(function (k) {
-      var p = k.split('|'), s = +p[0], t = p[1];
-      return D.shows.filter(function (x) { return x.s === s && x.t === t; })[0] || null;
+      var p = k.split('|');
+      if (p[0] !== dayInfo().id) return null;
+      return shows().filter(function (x) { return x.s === +p[1] && x.t === p[2]; })[0] || null;
     }).filter(Boolean).sort(function (a, b) { return mins(a.t) - mins(b.t); });
   }
 
@@ -325,7 +350,7 @@
   // 区間 [fromM, toM] に、移動込みで収まる演目
   // 区間に収まる演目。徒歩と「見終わってから次の固定までの空き」も返す
   function feasible(fromM, toM, fromStage, toStage) {
-    return D.shows.filter(function (sh) {
+    return shows().filter(function (sh) {
       if (has(sh.s, sh.t)) return false;
       var w1 = walk(fromStage, sh.s);
       var w2 = walk(sh.s, toStage);
@@ -443,7 +468,7 @@
   var slot = null;
   function slots() {
     var set = {};
-    D.shows.forEach(function (sh) { set[sh.t] = (set[sh.t] || 0) + 1; });
+    shows().forEach(function (sh) { set[sh.t] = (set[sh.t] || 0) + 1; });
     var keys = Object.keys(set).sort();
     if (slot === null || keys.indexOf(slot) < 0) slot = keys[0];
     return keys.map(function (k) {
@@ -451,7 +476,7 @@
     }).join('');
   }
   function slotList() {
-    var list = D.shows.filter(function (sh) { return sh.t === slot; })
+    var list = shows().filter(function (sh) { return sh.t === slot; })
       .sort(function (a, b) { return (ZRANK[stageById[a.s].zone] - ZRANK[stageById[b.s].zone]) || (a.s - b.s); });
     if (!list.length) return '<div class="card"><div class="empty">この時間に始まる演目はない。</div></div>';
     return '<div class="card">' + list.map(function (sh) { return showRow(sh); }).join('') + '</div>';
@@ -459,19 +484,19 @@
   // ---- 探す：アーティスト ----
   function artistList() {
     var nums = Object.keys(D.artists).filter(function (n) {
-      return D.shows.some(function (sh) { return sh.a === n; });
+      return shows().some(function (sh) { return sh.a === n; });
     }).sort(function (a, b) { return (D.artists[b].kid - D.artists[a].kid) || (D.artists[a].jp < D.artists[b].jp ? -1 : 1); });
     var html = '<div class="sec-title">アーティストから <span>その人の出番だけ出る</span></div>';
     html += '<div class="card">' + nums.map(function (n) {
       var a = D.artists[n];
-      var shows = D.shows.filter(function (sh) { return sh.a === n; }).sort(function (x, y) { return mins(x.t) - mins(y.t); });
-      var times = shows.map(function (sh) {
+      var list = dayShows(n);
+      var times = list.map(function (sh) {
         return '<button class="pin" style="width:auto;height:auto;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700" data-s="' + sh.s + '" data-t="' + sh.t + '">' + sh.t + '</button>';
       }).join(' ');
       return '<div class="item" data-a="' + n + '"><div class="b"><div class="name">' + a.jp + ' ' + stars(a.kid) + '</div>' +
         '<div class="why">' + a.why + '</div>' +
         '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">' + times +
-        '<span style="font-size:11.5px;color:#6b6b70">' + shows.map(function (sh) { return stageById[sh.s].short; })
+        '<span style="font-size:11.5px;color:#6b6b70">' + list.map(function (sh) { return stageById[sh.s].short; })
           .filter(function (v, i, arr) { return arr.indexOf(v) === i; }).join(' / ') + '</span></div></div></div>';
     }).join('') + '</div>';
     return html;
@@ -504,7 +529,13 @@
   // ---- 3案 ----
   function renderPlans() {
     var html = '';
-    D.plans.forEach(function (p) {
+    var list = D.plans[dayInfo().id] || [];
+    if (!list.length) {
+      document.getElementById('plans').innerHTML = '<div class="card"><div class="empty">この日のプリセットはまだ用意していない（11/1用のみ）。<br>' +
+        '「決める」で見たい1本を固定すれば、そこから絞れる。</div></div>';
+      return;
+    }
+    list.forEach(function (p) {
       html += '<div class="card"><div class="plan-head"><h2><span class="tag">' + p.id + '</span>' + p.title +
         '</h2><div class="sub">' + p.sub + '</div></div><div class="plan-note">' + p.note +
         '<div class="btn-line"><button data-plan="' + p.id + '">この案をルートに取り込む</button></div></div>';
@@ -530,11 +561,15 @@
     document.getElementById('memo').innerHTML = '<h3>子連れメモ</h3><dl>' + D.tips.map(function (t) {
       return '<dt>' + t[0] + '</dt><dd>' + t[1] + '</dd>';
     }).join('') + '</dl>';
-    document.getElementById('premium').innerHTML = D.premium.program.map(function (p) {
+    var pList = D.premium[dayInfo().id] || [];
+    document.getElementById('premium').innerHTML = pList.map(function (p) {
       return p.label + '：' + p.acts.map(function (n) { return (D.artists[n] || {}).jp || n; }).join(' / ');
     }).join('<br>') + '<br><b>有料なのでプランには入れていない。</b>';
   }
 
+  function dayShows(n) {
+    return shows().filter(function (sh) { return sh.a === n; }).sort(function (x, y) { return mins(x.t) - mins(y.t); });
+  }
   var sheetNum = null;
   function openSheet(n) {
     sheetNum = String(n);
@@ -554,7 +589,7 @@
     var a = D.artists[sheetNum];
     var el = document.getElementById('sheet');
     if (!a) { el.innerHTML = '<div class="empty">情報がない</div>'; return; }
-    var list = D.shows.filter(function (sh) { return sh.a === sheetNum; })
+    var list = dayShows(sheetNum)
       .sort(function (x, y) { return mins(x.t) - mins(y.t); });
     var img = a.img ? '<img src="' + a.img + '" alt="' + a.jp + '" loading="lazy">' : '<img alt="">';
     el.innerHTML =
@@ -574,8 +609,13 @@
       '<a class="sh-link" href="https://daidogei.com/artist2026/" target="_blank" rel="noopener">公式サイトのアーティスト一覧を開く（No.' + sheetNum + '）</a>';
   }
 
+  function renderDays() {
+    document.getElementById('days').innerHTML = D.days.map(function (d, i) {
+      return '<button data-day="' + i + '" class="' + (i === DI ? 'on' : '') + '">' + d.label + '</button>';
+    }).join('');
+  }
   function render() {
-    renderFix(); renderCnt(); renderStages(); renderPlans();
+    renderDays(); renderFix(); renderCnt(); renderStages(); renderPlans(); renderMemo();
     document.getElementById('slots').innerHTML = slots();
     document.getElementById('slotlist').innerHTML = slotList();
     document.getElementById('artists').innerHTML = artistList();
@@ -590,9 +630,16 @@
     if (cell) { openSheet(cell.dataset.a); return; }
     var pl = e.target.closest('[data-plan]');
     if (pl) {
-      var p = D.plans.filter(function (x) { return x.id === pl.dataset.plan; })[0];
-      pins = p.items.filter(function (it) { return it.a; }).map(function (it) { return it.s + '|' + it.t; });
+      var p = (D.plans[dayInfo().id] || []).filter(function (x) { return x.id === pl.dataset.plan; })[0];
+      if (!p) return;
+      pins = p.items.filter(function (it) { return it.a; }).map(function (it) { return keyOf(it.s, it.t); });
       save(); render(); go('fix'); return;
+    }
+    var dy = e.target.closest('[data-day]');
+    if (dy) {
+      DI = +dy.dataset.day; reindex(); slot = null; closeSheet();
+      document.getElementById('slots').innerHTML = slots();
+      render(); return;
     }
     var sl = e.target.closest('[data-slot]');
     if (sl) { slot = sl.dataset.slot; document.getElementById('slots').innerHTML = slots(); document.getElementById('slotlist').innerHTML = slotList(); return; }
