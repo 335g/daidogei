@@ -77,6 +77,8 @@
   .gap h4 { margin: 0; padding: 9px 14px; font-size: 12.5px; font-weight: 700; color: var(--ink); background: #fff8e8; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 8px; }
   .gap h4 span { font-weight: 400; color: var(--sub); font-size: 11.5px; }
   .gap .none { padding: 11px 14px; font-size: 12.5px; color: var(--sub); }
+  .tinyline { font-size: 11.5px; color: var(--sub); margin-top: 5px; display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+  .tinypin { width: auto; height: auto; border-radius: 999px; padding: 2px 9px; font-size: 11.5px; font-weight: 700; margin: 0; line-height: 1.5; }
   .gap .more { border-top: 1px solid var(--line); }
   .gap .more summary { padding: 9px 14px; font-size: 12px; color: var(--blue); cursor: pointer; list-style: none; }
   .gap .more summary::-webkit-details-marker { display: none; }
@@ -256,7 +258,7 @@
 <script src="data.js"></script>
 <script>
 (function () {
-  var VER = 'v18';
+  var VER = 'v20';
   var D = window.DATA;
   var stageById = {};
   D.stages.forEach(function (s) { stageById[s.id] = s; });
@@ -407,18 +409,39 @@
 
   function gapBlock(title, sub, list, limit, mode, anchors) {
     if (!list.length) return '';
-    var row = function (c) {
+    var all = sortCands(list, mode || 'fill', anchors);
+    // 空きを埋める場面では「着いてから45分以上待つ」候補は落とす。無ければ元のまま。
+    if (mode === 'fill') {
+      var tight = all.filter(function (c) { return c.idle <= 45; });
+      if (tight.length) all = tight;
+    }
+    // 同じ会場は1行にまとめる（1行＝その会場で一番いい1本、ほかの時間は小さいボタン）
+    var order = [], groups = {};
+    all.forEach(function (c) {
+      if (!groups[c.sh.s]) { groups[c.sh.s] = []; order.push(c.sh.s); }
+      groups[c.sh.s].push(c);
+    });
+    var rowFor = function (k) {
+      var g = groups[k], c = g[0];
+      var a = D.artists[c.sh.a] || { jp: c.sh.a, kid: 0 };
       var parts = [wl(c.w, c.rail), c.sh.t + '-' + c.sh.e];
       if (mode !== 'next' && c.idle > 0) parts.push('見終わりから' + c.idle + '分あく');
-      return showRow(c.sh, parts.filter(Boolean).join('・'));
+      var others = g.slice(1).sort(function (x, y) { return mins(x.sh.t) - mins(y.sh.t); });
+      var pills = others.slice(0, 4).map(function (o) {
+        return '<button class="pin tinypin" data-s="' + o.sh.s + '" data-t="' + o.sh.t + '">' + o.sh.t + '</button>';
+      }).join('');
+      return '<div class="item" data-a="' + c.sh.a + '"><div class="t">' + c.sh.t + '</div><div class="b">' +
+        stageTag(c.sh.s) + '<div class="name">' + a.jp + ' ' + stars(a.kid) + '</div>' +
+        '<div class="note">' + parts.filter(Boolean).join('・') + '</div>' +
+        (pills ? '<div class="tinyline">同じ会場 ' + pills + (others.length > 4 ? '<span>+' + (others.length - 4) + '</span>' : '') + '</div>' : '') +
+        '</div>' + pinBtn(c.sh.s, c.sh.t) + '</div>';
     };
-    var all = sortCands(list, mode || 'fill', anchors);
-    var head = all.slice(0, limit || 6);
-    var tail = all.slice(head.length);
+    var head = order.slice(0, limit || 6);
+    var tail = order.slice(head.length);
     var html = '<div class="gap"><div class="card"><h4>' + title + '<span>' + sub + '</span></h4>';
-    html += head.map(row).join('');
+    html += head.map(rowFor).join('');
     if (tail.length) {
-      html += '<details class="more"><summary>他 ' + tail.length + '本を表示</summary>' + tail.map(row).join('') + '</details>';
+      html += '<details class="more"><summary>他 ' + tail.length + '会場を表示</summary>' + tail.map(rowFor).join('') + '</details>';
     }
     return html + '</div></div>';
   }
@@ -501,7 +524,7 @@
     // 最後の後
     var last = r[r.length - 1];
     // 「この後」は2時間ぶんだけ出す。全部出すと選択肢が多すぎて絞れない。
-    var afterTo = Math.min(mins(last.t) + 30 + 120, dayWindow().close);
+    var afterTo = Math.min(mins(last.t) + 30 + 90, dayWindow().close);
     html += gapBlock(last.t + ' の後 → ' + hm(afterTo), stageById[last.s].short + '発',
       feasible(mins(last.t) + 30, afterTo, last.s, null), 6, 'next', [last.s]);
     el.innerHTML = html;
