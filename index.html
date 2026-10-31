@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>11/1(日) 駿府城公園 キッズ攻略 | 大道芸ワールドカップ2026</title>
+<meta name="theme-color" content="#0f6fb5">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤹</text></svg>">
+<style>
+  :root {
+    --bg: #f6f4f0; --card: #fff; --ink: #1c1c1e; --sub: #6b6b70; --line: #e3ded7;
+    --blue: #0f6fb5; --hakubutsu: #2e8b57; --gym: #c0392b; --warn: #c2410c;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0 auto; max-width: 600px; background: var(--bg); color: var(--ink);
+    font: 16px/1.65 system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    padding-bottom: 92px;
+  }
+  header { padding: 16px 16px 12px; background: var(--blue); color: #fff; }
+  header h1 { margin: 0; font-size: 19px; line-height: 1.35; }
+  header p { margin: 4px 0 0; font-size: 12.5px; opacity: .88; }
+  nav {
+    position: sticky; top: 0; z-index: 20; display: grid; grid-template-columns: repeat(5, 1fr);
+    background: rgba(246,244,240,.97); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+  }
+  nav button {
+    appearance: none; border: 0; background: none; font: inherit; font-size: 13px; padding: 11px 0 9px;
+    color: var(--sub); cursor: pointer; border-bottom: 2.5px solid transparent;
+  }
+  nav button.on { color: var(--blue); font-weight: 700; border-bottom-color: var(--blue); }
+  main { padding: 12px 12px 0; }
+  section { display: none; }
+  section.on { display: block; }
+  .lead { font-size: 12.5px; color: var(--sub); margin: 0 4px 10px; }
+
+  .card { background: var(--card); border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.06); margin-bottom: 10px; overflow: hidden; }
+  .item { display: flex; gap: 10px; padding: 11px 12px 11px 14px; border-bottom: 1px solid var(--line); align-items: flex-start; }
+  .item:last-child { border-bottom: 0; }
+  .item .t { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 15px; width: 46px; flex: 0 0 46px; padding-top: 1px; }
+  .item .b { flex: 1; min-width: 0; }
+  .item .name { font-weight: 700; font-size: 15px; line-height: 1.4; }
+  .item .why { font-size: 12.5px; color: #4a4a4f; margin-top: 2px; }
+  .item .note { font-size: 12px; color: var(--blue); margin-top: 3px; }
+  .item .conf { font-size: 12px; color: var(--warn); margin-top: 3px; font-weight: 700; }
+  .item.fixed { background: #f2f7fc; }
+  .stage { font-size: 11px; font-weight: 700; color: #fff; border-radius: 5px; padding: 1.5px 6px; display: inline-block; margin-bottom: 3px; background: var(--blue); }
+  .stage.hakubutsu { background: var(--hakubutsu); }
+  .stage.gym { background: var(--gym); }
+  .move { padding: 7px 14px; font-size: 12px; color: var(--sub); background: #f2efe9; border-bottom: 1px solid var(--line); }
+  .move::before { content: "↓ "; }
+  .move.bad { color: var(--warn); font-weight: 700; }
+  .stars { color: #d98200; letter-spacing: -.5px; font-size: 12px; }
+  .stars.s2 { color: #8a8a8f; }
+  .stars.s1 { color: #b9b9bd; }
+  .pin {
+    appearance: none; flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%;
+    border: 1.5px solid var(--line); background: #fff; color: var(--sub);
+    font-size: 17px; line-height: 1; cursor: pointer; margin-top: 2px;
+  }
+  .pin.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .bidx { flex: 0 0 auto; width: 20px; text-align: center; font-size: 12px; color: var(--sub); padding-top: 9px; font-variant-numeric: tabular-nums; }
+
+  .gap { margin: 2px 0 10px; }
+  .gap h4 { margin: 0; padding: 9px 14px; font-size: 12.5px; font-weight: 700; color: var(--ink); background: #fff8e8; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 8px; }
+  .gap h4 span { font-weight: 400; color: var(--sub); font-size: 11.5px; }
+  .gap .none { padding: 11px 14px; font-size: 12.5px; color: var(--sub); }
+  .gap .more { padding: 9px 14px; font-size: 12px; color: var(--sub); border-top: 1px solid var(--line); }
+
+  .slots { display: flex; gap: 7px; overflow-x: auto; padding: 2px 4px 12px; }
+  .slots::-webkit-scrollbar { display: none; }
+  .slots button {
+    appearance: none; font: inherit; font-size: 14px; font-variant-numeric: tabular-nums; font-weight: 700;
+    padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff;
+    color: var(--sub); cursor: pointer; white-space: nowrap;
+  }
+  .slots button.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .slots button .d { display: block; font-size: 9.5px; font-weight: 400; opacity: .8; }
+
+  .filters { display: flex; gap: 8px; padding: 0 4px 10px; }
+  .filters button {
+    appearance: none; font: inherit; font-size: 13px; padding: 6px 13px; border-radius: 999px;
+    border: 1px solid var(--line); background: #fff; color: var(--sub); cursor: pointer;
+  }
+  .filters button.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  .stageblock { background: #fff; border-radius: 14px; margin-bottom: 10px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+  .stageblock h3 { margin: 0; padding: 11px 14px; font-size: 14.5px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); gap: 8px; }
+  .stageblock h3 .pos { font-size: 11px; font-weight: 400; color: var(--sub); white-space: nowrap; }
+  .stageblock .row { display: flex; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); align-items: center; }
+  .stageblock .row:last-child { border-bottom: 0; }
+  .stageblock .row .t { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--sub); width: 88px; flex: 0 0 88px; }
+  .stageblock .row .n { flex: 1; font-size: 14px; font-weight: 600; }
+  .stageblock .empty { padding: 12px 14px; font-size: 12.5px; color: var(--sub); }
+
+  .plan-head { padding: 13px 14px; border-bottom: 1px solid var(--line); }
+  .plan-head h2 { margin: 0; font-size: 17px; display: flex; align-items: center; gap: 8px; }
+  .plan-head h2 .tag { font-size: 11px; font-weight: 700; color: #fff; background: var(--blue); border-radius: 6px; padding: 2px 7px; }
+  .plan-head .sub { font-size: 12.5px; color: var(--sub); margin-top: 3px; }
+  .plan-note { font-size: 12.5px; color: #4a4a4f; background: #fbf8f2; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .btn-line { margin-top: 8px; }
+  .btn-line button { appearance: none; font: inherit; font-size: 12px; font-weight: 700; border: 1.5px solid var(--blue); color: var(--blue); background: #fff; padding: 5px 13px; border-radius: 999px; cursor: pointer; }
+
+  .mapwrap { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+  .mapwrap img { width: 100%; display: block; }
+  .legend .lg { display: flex; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 13.5px; align-items: baseline; }
+  .legend .lg:last-child { border-bottom: 0; }
+  .legend .lg b { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 12px; flex: 0 0 22px; }
+  .legend .lg.hakubutsu b { background: var(--hakubutsu); }
+  .legend .lg.gym b { background: var(--gym); }
+  .legend .lg span.p { color: var(--sub); font-size: 11.5px; margin-left: 6px; }
+
+  .memo h3 { font-size: 14px; margin: 16px 4px 8px; }
+  .memo dl { background: #fff; border-radius: 14px; margin: 0; padding: 4px 14px; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+  .memo dt { font-weight: 700; font-size: 13.5px; margin-top: 10px; }
+  .memo dd { margin: 0 0 10px; font-size: 13px; color: #4a4a4f; }
+
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-width: 600px; margin: 0 auto;
+    padding: 9px 12px calc(9px + env(safe-area-inset-bottom));
+    background: rgba(255,255,255,.98); border-top: 1px solid var(--line);
+    display: flex; align-items: center; gap: 10px; font-size: 12.5px;
+  }
+  .bar .cnt { flex: 1; color: var(--sub); line-height: 1.35; }
+  .bar .cnt b { color: var(--ink); font-size: 14.5px; }
+  .bar button { appearance: none; font: inherit; font-size: 14px; font-weight: 700; border: 0; cursor: pointer; background: var(--blue); color: #fff; padding: 10px 18px; border-radius: 999px; }
+  .bar button:disabled { background: #c9c9cd; }
+  .empty { padding: 22px 16px; text-align: center; color: var(--sub); font-size: 13px; line-height: 1.7; }
+  footer { text-align: center; font-size: 11px; color: var(--sub); padding: 18px 16px 8px; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>11/1(日) 駿府城公園 キッズ攻略</h1>
+  <p>大道芸ワールドカップin静岡 2026 ・ 10:30着 / 19:00解散 ・ 6歳児と歩く</p>
+</header>
+
+<nav>
+  <button data-v="fix" class="on">決める</button>
+  <button data-v="find">探す</button>
+  <button data-v="time">時間表</button>
+  <button data-v="plan">3案</button>
+  <button data-v="map">地図</button>
+</nav>
+
+<main>
+  <section id="v-fix" class="on">
+    <p class="lead" id="fixlead"></p>
+    <div id="route"></div>
+  </section>
+
+  <section id="v-find">
+    <p class="lead">見たい人が決まっているなら「アーティスト」から。時間だけ決まっているなら上の枠から。</p>
+    <div class="slots" id="slots"></div>
+    <div id="slotlist"></div>
+    <div id="artists"></div>
+  </section>
+
+  <section id="v-time">
+    <div class="filters">
+      <button data-f="all" class="on">すべて</button>
+      <button data-f="kid3">★3だけ</button>
+    </div>
+    <div id="stages"></div>
+  </section>
+
+  <section id="v-plan">
+    <p class="lead">ゼロから選ぶのが面倒なとき用。丸ごと取り込んでから、いらない演目を外す使い方もできる。</p>
+    <div id="plans"></div>
+  </section>
+
+  <section id="v-map">
+    <div class="mapwrap">
+      <img src="assets/parkmap.jpg" alt="駿府城公園エリアマップ" loading="lazy">
+      <div class="legend" id="legend"></div>
+    </div>
+    <p class="lead" style="margin-top:10px">園内は端から端まで徒歩5分。歴博エリア（9-12）だけ南に離れていて徒歩10分。</p>
+    <div class="memo" id="memo"></div>
+    <div class="memo">
+      <h3>有料ステージ</h3>
+      <dl>
+        <dt>プレミアムステージ（中央体育館・全席自由）</dt>
+        <dd id="premium"></dd>
+        <dt>スペシャルシート（アイワポイント・150席）</dt>
+        <dd>園内で座って見たいならこれ。当日券あり。</dd>
+      </dl>
+    </div>
+  </section>
+</main>
+
+<div class="bar">
+  <div class="cnt" id="cnt"></div>
+  <button id="open-route">ルート</button>
+</div>
+
+<footer>
+  公式PDF（schedule2026_1014.pdf DAY2）から作成。演目は各30分。<br>
+  出演者・時間は変更される場合があります。現地の掲示を優先してください。
+</footer>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  var D = window.DATA;
+  var OPEN = 630;   // 10:30 到着
+  var CLOSE = 1140; // 19:00 解散
+  var stageById = {};
+  D.stages.forEach(function (s) { stageById[s.id] = s; });
+  var byStage = {};
+  D.shows.forEach(function (sh) { (byStage[sh.s] = byStage[sh.s] || []).push(sh); });
+
+  var mins = function (t) { var p = t.split(':'); return (+p[0]) * 60 + (+p[1]); };
+  var hm = function (m) { return ('0' + Math.floor(m / 60)).slice(-2) + ':' + ('0' + (m % 60)).slice(-2); };
+
+  function walk(a, b) {
+    if (!a || !b) return 0;
+    if (a === b) return 0;
+    var A = stageById[a], B = stageById[b];
+    if (A.area === B.area) return A.area === 'hakubutsu' ? 2 : 4;
+    if (A.area === 'gym' || B.area === 'gym') return 12;
+    return 10;
+  }
+
+  // ---- pinned ----
+  var KEY = 'daidogei2026.pins.v2';
+  var pins = [];
+  try { pins = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { pins = []; }
+  var save = function () { try { localStorage.setItem(KEY, JSON.stringify(pins)); } catch (e) {} };
+  var has = function (s, t) { return pins.indexOf(s + '|' + t) > -1; };
+  function toggle(s, t) {
+    var k = s + '|' + t, i = pins.indexOf(k);
+    if (i > -1) pins.splice(i, 1); else pins.push(k);
+    save(); render();
+  }
+  function route() {
+    return pins.map(function (k) {
+      var p = k.split('|'), s = +p[0], t = p[1];
+      return D.shows.filter(function (x) { return x.s === s && x.t === t; })[0] || null;
+    }).filter(Boolean).sort(function (a, b) { return mins(a.t) - mins(b.t); });
+  }
+
+  function wl(w) { return w === null ? '' : (w ? '徒歩' + w + '分' : '同じ場所'); }
+  function stars(k) {
+    if (k >= 3) return '<span class="stars">★★★</span>';
+    if (k === 2) return '<span class="stars s2">★★☆</span>';
+    return '<span class="stars s1">★☆☆</span>';
+  }
+  function stageTag(s) {
+    var st = stageById[s];
+    var cls = st.area === 'hakubutsu' ? ' hakubutsu' : (st.area === 'gym' ? ' gym' : '');
+    return '<span class="stage' + cls + '">' + st.short + '</span>';
+  }
+  function pinBtn(s, t, on) {
+    var o = on === undefined ? has(s, t) : on;
+    return '<button class="pin' + (o ? ' on' : '') + '" data-s="' + s + '" data-t="' + t + '">' + (o ? '✓' : '＋') + '</button>';
+  }
+  function showRow(sh, extra, fixed) {
+    var a = D.artists[sh.a] || { jp: sh.a, kid: 0, why: '' };
+    return '<div class="item' + (fixed ? ' fixed' : '') + '"><div class="t">' + sh.t + '</div><div class="b">' + stageTag(sh.s) +
+      '<div class="name">' + a.jp + ' ' + stars(a.kid) + '</div>' +
+      '<div class="why">' + a.why + '</div>' +
+      (extra ? '<div class="note">' + extra + '</div>' : '') + '</div>' + pinBtn(sh.s, sh.t) + '</div>';
+  }
+
+  // 区間 [fromM, toM] に、移動込みで収まる演目
+  function feasible(fromM, toM, fromStage, toStage) {
+    return D.shows.filter(function (sh) {
+      if (has(sh.s, sh.t)) return false;
+      var w1 = walk(fromStage, sh.s);
+      var w2 = walk(sh.s, toStage);
+      var t = mins(sh.t);
+      return t >= fromM + w1 && t + 30 + w2 <= toM;
+    }).map(function (sh) {
+      return { sh: sh, w: fromStage ? walk(fromStage, sh.s) : null, kid: (D.artists[sh.a] || {}).kid || 0 };
+    }).sort(function (a, b) {
+      return (b.kid - a.kid) || ((a.w || 0) - (b.w || 0)) || (mins(a.sh.t) - mins(b.sh.t));
+    });
+  }
+
+  function gapBlock(title, sub, list, limit) {
+    if (!list.length) return '';
+    var shown = list.slice(0, limit || 6);
+    var html = '<div class="gap"><div class="card"><h4>' + title + '<span>' + sub + '</span></h4>';
+    html += shown.map(function (c) {
+      var extra = [wl(c.w), c.sh.t + '-' + c.sh.e].filter(Boolean).join('・');
+      return showRow(c.sh, extra);
+    }).join('');
+    if (list.length > shown.length) html += '<div class="more">他 ' + (list.length - shown.length) + '本</div>';
+    return html + '</div></div>';
+  }
+
+  function renderFix() {
+    var r = route();
+    var el = document.getElementById('route');
+    var lead = document.getElementById('fixlead');
+    if (!r.length) {
+      lead.textContent = 'まず1本、絶対に見たいものを固定する。固定した瞬間、その前後で「時間的に間に合う演目」だけに絞られる。';
+      var early = feasible(OPEN, CLOSE, null, null).slice(0, 3);
+      el.innerHTML = '<div class="sec-title">10:30 着 ・ ここから始められるもの</div>' +
+        '<div class="card">' + early.map(function (c) {
+          return showRow(c.sh, [wl(c.w), c.sh.t + '-' + c.sh.e].filter(Boolean).join('・'));
+        }).join('') + '</div>' +
+        '<p class="lead" style="margin-top:12px">11:00の枠を開いて★3から選ぶのが早い。「探す」タブへ。</p>';
+      return;
+    }
+    lead.innerHTML = r.length + '本固定 ・ ' + r[0].t + '〜' + hm(mins(r[r.length - 1].t) + 30) +
+      '<br>黄色い枠が「そこに入る候補」。押せばルートに挟まる。';
+    var html = '';
+    // 最初の前
+    html += gapBlock('10:30 着 → ' + r[0].t, '最初の1本まで', feasible(OPEN, mins(r[0].t), null, r[0].s), 4);
+    for (var i = 0; i < r.length; i++) {
+      var sh = r[i], a = D.artists[sh.a] || { jp: sh.a, kid: 0, why: '' };
+      html += '<div class="card">' + showRow(sh, sh.t + '-' + sh.e + '（30分）', true) + '</div>';
+      if (i < r.length - 1) {
+        var nx = r[i + 1];
+        var w = walk(sh.s, nx.s);
+        var gap = mins(nx.t) - (mins(sh.t) + 30);
+        html += '<div class="move' + (gap < w ? ' bad' : '') + '">' + stageById[sh.s].short + ' → ' + stageById[nx.s].short +
+          '：' + wl(w) + (gap < w ? '（' + gap + '分しかない・移動が間に合わない）' : '（' + gap + '分あく）') + '</div>';
+        html += gapBlock(sh.t + ' の後 → ' + nx.t, stageById[sh.s].short + '発 ' + wl(w),
+          feasible(mins(sh.t) + 30, mins(nx.t), sh.s, nx.s), 4);
+      }
+    }
+    // 最後の後
+    var last = r[r.length - 1];
+    html += gapBlock(last.t + ' の後 → 19:00', stageById[last.s].short + '発',
+      feasible(mins(last.t) + 30, CLOSE, last.s, null), 6);
+    el.innerHTML = html;
+  }
+
+  function renderCnt() {
+    var r = route();
+    document.getElementById('cnt').innerHTML = r.length
+      ? 'ルート <b>' + r.length + '本</b> ・ ' + r[0].t + '〜' + hm(mins(r[r.length - 1].t) + 30)
+      : '見たい演目を1本固定すると、前後が絞られる';
+    document.getElementById('open-route').disabled = false;
+  }
+
+  // ---- 探す：時間枠 ----
+  var slot = null;
+  function slots() {
+    var set = {};
+    D.shows.forEach(function (sh) { set[sh.t] = (set[sh.t] || 0) + 1; });
+    var keys = Object.keys(set).sort();
+    if (slot === null || keys.indexOf(slot) < 0) slot = keys[0];
+    return keys.map(function (k) {
+      return '<button data-slot="' + k + '" class="' + (k === slot ? 'on' : '') + '">' + k + '<span class="d">' + set[k] + '本</span></button>';
+    }).join('');
+  }
+  function slotList() {
+    var list = D.shows.filter(function (sh) { return sh.t === slot; }).sort(function (a, b) { return a.s - b.s; });
+    if (!list.length) return '<div class="card"><div class="empty">この時間に始まる演目はない。</div></div>';
+    return '<div class="card">' + list.map(function (sh) { return showRow(sh); }).join('') + '</div>';
+  }
+  // ---- 探す：アーティスト ----
+  function artistList() {
+    var nums = Object.keys(D.artists).filter(function (n) {
+      return D.shows.some(function (sh) { return sh.a === n; });
+    }).sort(function (a, b) { return (D.artists[b].kid - D.artists[a].kid) || (D.artists[a].jp < D.artists[b].jp ? -1 : 1); });
+    var html = '<div class="sec-title">アーティストから <span>その人の出番だけ出る</span></div>';
+    html += '<div class="card">' + nums.map(function (n) {
+      var a = D.artists[n];
+      var shows = D.shows.filter(function (sh) { return sh.a === n; }).sort(function (x, y) { return mins(x.t) - mins(y.t); });
+      var times = shows.map(function (sh) {
+        return '<button class="pin" style="width:auto;height:auto;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700" data-s="' + sh.s + '" data-t="' + sh.t + '">' + sh.t + '</button>';
+      }).join(' ');
+      return '<div class="item"><div class="b"><div class="name">' + a.jp + ' ' + stars(a.kid) + '</div>' +
+        '<div class="why">' + a.why + '</div>' +
+        '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">' + times +
+        '<span style="font-size:11.5px;color:#6b6b70">' + shows.map(function (sh) { return stageById[sh.s].short; })
+          .filter(function (v, i, arr) { return arr.indexOf(v) === i; }).join(' / ') + '</span></div></div></div>';
+    }).join('') + '</div>';
+    return html;
+  }
+
+  // ---- 時間表 ----
+  var filter = 'all';
+  function renderStages() {
+    var html = '';
+    D.stages.slice().sort(function (a, b) { return a.id - b.id; }).forEach(function (st) {
+      var list = (byStage[st.id] || []).slice().sort(function (a, b) { return mins(a.t) - mins(b.t); });
+      if (filter === 'kid3') list = list.filter(function (sh) { var a = D.artists[sh.a]; return a && a.kid >= 3; });
+      if (st.kind === 'booth') {
+        html += '<div class="stageblock"><h3>' + st.short + '<span class="pos">' + st.pos + '</span></h3><div class="empty">' + (st.note || '') + '</div></div>';
+        return;
+      }
+      if (filter === 'kid3' && !list.length) return;
+      html += '<div class="stageblock"><h3>' + st.name + '<span class="pos">' + st.pos + '</span></h3>';
+      if (st.note) html += '<div class="empty">' + st.note + '</div>';
+      if (!list.length) html += '<div class="empty">この条件の演目なし</div>';
+      list.forEach(function (sh) {
+        var a = D.artists[sh.a] || { jp: sh.a, kid: 0 };
+        html += '<div class="row"><div class="t">' + sh.t + '-' + sh.e + '</div><div class="n">' + a.jp + ' ' + stars(a.kid) + '</div>' + pinBtn(sh.s, sh.t) + '</div>';
+      });
+      html += '</div>';
+    });
+    document.getElementById('stages').innerHTML = html;
+  }
+
+  // ---- 3案 ----
+  function renderPlans() {
+    var html = '';
+    D.plans.forEach(function (p) {
+      html += '<div class="card"><div class="plan-head"><h2><span class="tag">' + p.id + '</span>' + p.title +
+        '</h2><div class="sub">' + p.sub + '</div></div><div class="plan-note">' + p.note +
+        '<div class="btn-line"><button data-plan="' + p.id + '">この案をルートに取り込む</button></div></div>';
+      p.items.forEach(function (it) {
+        if (it.move) { html += '<div class="move">' + it.move + '</div>'; return; }
+        var a = D.artists[it.a] || { jp: it.a, kid: 0, why: '' };
+        html += '<div class="item"><div class="t">' + it.t + '</div><div class="b">' + stageTag(it.s) +
+          '<div class="name">' + a.jp + ' ' + stars(a.kid) + '</div><div class="why">' + a.why + '</div>' +
+          (it.note ? '<div class="note">' + it.note + '</div>' : '') + '</div>' + pinBtn(it.s, it.t) + '</div>';
+      });
+      html += '</div>';
+    });
+    document.getElementById('plans').innerHTML = html;
+  }
+
+  function renderLegend() {
+    document.getElementById('legend').innerHTML = D.stages.map(function (st) {
+      var cls = st.area === 'hakubutsu' ? 'hakubutsu' : (st.area === 'gym' ? 'gym' : '');
+      return '<div class="lg ' + cls + '"><b>' + st.id + '</b><div>' + st.name +
+        '<span class="p">' + st.pos + (st.kind === 'paid' ? '・有料' : '') + '</span></div></div>';
+    }).join('');
+  }
+  function renderMemo() {
+    document.getElementById('memo').innerHTML = '<h3>子連れメモ</h3><dl>' + D.tips.map(function (t) {
+      return '<dt>' + t[0] + '</dt><dd>' + t[1] + '</dd>';
+    }).join('') + '</dl>';
+    document.getElementById('premium').innerHTML = D.premium.program.map(function (p) {
+      return p.label + '：' + p.acts.map(function (n) { return (D.artists[n] || {}).jp || n; }).join(' / ');
+    }).join('<br>') + '<br><b>有料なのでプランには入れていない。</b>';
+  }
+
+  function render() {
+    renderFix(); renderCnt(); renderStages(); renderPlans();
+    document.getElementById('slots').innerHTML = slots();
+    document.getElementById('slotlist').innerHTML = slotList();
+    document.getElementById('artists').innerHTML = artistList();
+  }
+
+  document.addEventListener('click', function (e) {
+    var pin = e.target.closest('.pin[data-s]');
+    if (pin) { toggle(+pin.dataset.s, pin.dataset.t); return; }
+    var pl = e.target.closest('[data-plan]');
+    if (pl) {
+      var p = D.plans.filter(function (x) { return x.id === pl.dataset.plan; })[0];
+      pins = p.items.filter(function (it) { return it.a; }).map(function (it) { return it.s + '|' + it.t; });
+      save(); render(); go('fix'); return;
+    }
+    var sl = e.target.closest('[data-slot]');
+    if (sl) { slot = sl.dataset.slot; document.getElementById('slots').innerHTML = slots(); document.getElementById('slotlist').innerHTML = slotList(); return; }
+    var nav = e.target.closest('nav button');
+    if (nav) { go(nav.dataset.v); return; }
+    var f = e.target.closest('.filters button');
+    if (f) {
+      filter = f.dataset.f;
+      document.querySelectorAll('.filters button').forEach(function (b) { b.classList.toggle('on', b === f); });
+      renderStages();
+    }
+  });
+  function go(v) {
+    document.querySelectorAll('nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === v); });
+    document.querySelectorAll('main section').forEach(function (s) { s.classList.toggle('on', s.id === 'v-' + v); });
+    if (history.replaceState) history.replaceState(null, '', '#' + v);
+    window.scrollTo(0, 0);
+  }
+  document.getElementById('open-route').addEventListener('click', function () { go('fix'); });
+
+  renderLegend(); renderMemo(); render();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+  var h = (location.hash || '').replace('#', '');
+  if (['fix', 'find', 'time', 'plan', 'map'].indexOf(h) > -1) go(h);
+})();
+</script>
+</body>
+</html>
