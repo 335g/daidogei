@@ -174,7 +174,7 @@
 
 <header>
   <h1>大道芸ワールドカップin静岡 2026</h1>
-  <p>駿府城公園エリア ・ 6歳児と歩く ・ 10:30着 / 19:00解散</p>
+  <p>駿府城公園エリア ・ 全31会場 ・ 演目は各30分</p>
   <div class="days" id="days"></div>
 </header>
 
@@ -256,10 +256,8 @@
 <script src="data.js"></script>
 <script>
 (function () {
-  var VER = 'v17';
+  var VER = 'v18';
   var D = window.DATA;
-  var OPEN = 630;   // 10:30 到着
-  var CLOSE = 1140; // 19:00 解散
   var stageById = {};
   D.stages.forEach(function (s) { stageById[s.id] = s; });
 
@@ -274,6 +272,12 @@
   })();
   function dayInfo() { return D.days[DI]; }
   function shows() { return dayInfo().shows; }
+  // その日の最初の開演と最後の終演。到着時刻の仮定は置かない。
+  function dayWindow() {
+    var st = shows().map(function (s) { return mins(s.t); });
+    var en = shows().map(function (s) { return mins(s.e); });
+    return { open: Math.min.apply(null, st), close: Math.max.apply(null, en) };
+  }
   var byStage = {};
   function reindex() {
     byStage = {};
@@ -461,11 +465,12 @@
     var lead = document.getElementById('fixlead');
     if (!r.length) {
       lead.textContent = 'まず1本、絶対に見たいものを固定する。固定した瞬間、その前後で「時間的に間に合う演目」だけに絞られる。';
-      var early = sortCands(feasible(OPEN, CLOSE, null, null), 'next')
+      var w = dayWindow();
+      var early = sortCands(feasible(w.open, w.close, null, null), 'next')
         .filter(function (c) { var z = stageById[c.sh.s].zone; return z !== 'suruga' && z !== 'shimizu'; })
         .slice(0, 3);
       el.innerHTML = (nowOpen ? nowPanel() : '') +
-        '<div class="sec-title">10:30 着 ・ ここから始められるもの</div>' +
+        '<div class="sec-title">' + hm(w.open) + ' 開始 ・ ここから始められるもの</div>' +
         '<div class="card">' + early.map(function (c) {
           return showRow(c.sh, c.sh.t + '-' + c.sh.e + '・' + stageById[c.sh.s].pos);
         }).join('') + '</div>' +
@@ -476,7 +481,8 @@
       '<br>黄色い枠が「そこに入る候補」。押せばルートに挟まる。';
     var html = nowOpen ? nowPanel() : '';
     // 最初の前
-    html += gapBlock('10:30 着 → ' + r[0].t, '最初の1本まで', feasible(OPEN, mins(r[0].t), null, r[0].s), 5, 'fill', [r[0].s]);
+    var win = dayWindow();
+    html += gapBlock(hm(win.open) + ' 開始 → ' + r[0].t, '最初の1本まで', feasible(win.open, mins(r[0].t), null, r[0].s), 5, 'fill', [r[0].s]);
     for (var i = 0; i < r.length; i++) {
       var sh = r[i], a = D.artists[sh.a] || { jp: sh.a, kid: 0, why: '' };
       html += '<div class="card">' + showRow(sh, sh.t + '-' + sh.e + '（30分）', true) + '</div>';
@@ -495,8 +501,8 @@
     // 最後の後
     var last = r[r.length - 1];
     // 「この後」は2時間ぶんだけ出す。全部出すと選択肢が多すぎて絞れない。
-    var afterTo = Math.min(mins(last.t) + 30 + 120, CLOSE);
-    html += gapBlock(last.t + ' の後 → ' + hm(afterTo) + '（2時間）', stageById[last.s].short + '発',
+    var afterTo = Math.min(mins(last.t) + 30 + 120, dayWindow().close);
+    html += gapBlock(last.t + ' の後 → ' + hm(afterTo), stageById[last.s].short + '発',
       feasible(mins(last.t) + 30, afterTo, last.s, null), 6, 'next', [last.s]);
     el.innerHTML = html;
   }

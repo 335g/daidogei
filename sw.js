@@ -1,4 +1,4 @@
-const CACHE = 'daidogei2026-v17';
+const CACHE = 'daidogei2026-v18';
 const PHOTOS = 'daidogei2026-photos';
 const FILES = ['./', './index.html', './data.js', './assets/parkmap.jpg'];
 self.addEventListener('install', (e) => {
