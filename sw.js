@@ -1,4 +1,4 @@
-const CACHE = 'daidogei2026-v10';
+const CACHE = 'daidogei2026-v11';
 const FILES = ['./', './index.html', './data.js', './assets/parkmap.jpg'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
