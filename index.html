@@ -71,7 +71,11 @@
   .gap h4 { margin: 0; padding: 9px 14px; font-size: 12.5px; font-weight: 700; color: var(--ink); background: #fff8e8; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 8px; }
   .gap h4 span { font-weight: 400; color: var(--sub); font-size: 11.5px; }
   .gap .none { padding: 11px 14px; font-size: 12.5px; color: var(--sub); }
-  .gap .more { padding: 9px 14px; font-size: 12px; color: var(--sub); border-top: 1px solid var(--line); }
+  .gap .more { border-top: 1px solid var(--line); }
+  .gap .more summary { padding: 9px 14px; font-size: 12px; color: var(--blue); cursor: pointer; list-style: none; }
+  .gap .more summary::-webkit-details-marker { display: none; }
+  .gap .more summary::after { content: " ＋"; }
+  .gap .more[open] summary::after { content: " −"; }
 
   .slots { display: flex; gap: 7px; overflow-x: auto; padding: 2px 4px 12px; }
   .slots::-webkit-scrollbar { display: none; }
@@ -214,7 +218,7 @@
 <script src="data.js"></script>
 <script>
 (function () {
-  var VER = 'v9';
+  var VER = 'v10';
   var D = window.DATA;
   var OPEN = 630;   // 10:30 到着
   var CLOSE = 1140; // 19:00 解散
@@ -320,9 +324,16 @@
     }).filter(Boolean);
   }
   // fill: 空きを埋める候補（終わりが遅い順） / next: この後（時刻順）
-  function sortCands(list, mode) {
+  function sortCands(list, mode, anchors) {
+    var kw = function (c) { return c.kid || 2; };
     return list.sort(function (a, b) {
-      if (b.kid !== a.kid) return b.kid - a.kid;
+      // 固定した会場と同じ場所は、歩かずに済むので先に出す
+      if (anchors && anchors.length) {
+        var sa = anchors.indexOf(a.sh.s) > -1 ? 0 : 1;
+        var sb = anchors.indexOf(b.sh.s) > -1 ? 0 : 1;
+        if (sa !== sb) return sa - sb;
+      }
+      if (kw(b) !== kw(a)) return kw(b) - kw(a);
       if (mode === 'fill') {
         if (a.idle !== b.idle) return a.idle - b.idle;
         if (a.w !== b.w) return a.w - b.w;
@@ -333,16 +344,21 @@
     });
   }
 
-  function gapBlock(title, sub, list, limit, mode) {
+  function gapBlock(title, sub, list, limit, mode, anchors) {
     if (!list.length) return '';
-    var shown = sortCands(list, mode || 'fill').slice(0, limit || 6);
-    var html = '<div class="gap"><div class="card"><h4>' + title + '<span>' + sub + '</span></h4>';
-    html += shown.map(function (c) {
+    var row = function (c) {
       var parts = [wl(c.w, c.rail), c.sh.t + '-' + c.sh.e];
       if (mode !== 'next' && c.idle > 0) parts.push('見終わりから' + c.idle + '分あく');
       return showRow(c.sh, parts.filter(Boolean).join('・'));
-    }).join('');
-    if (list.length > shown.length) html += '<div class="more">他 ' + (list.length - shown.length) + '本</div>';
+    };
+    var all = sortCands(list, mode || 'fill', anchors);
+    var head = all.slice(0, limit || 6);
+    var tail = all.slice(head.length);
+    var html = '<div class="gap"><div class="card"><h4>' + title + '<span>' + sub + '</span></h4>';
+    html += head.map(row).join('');
+    if (tail.length) {
+      html += '<details class="more"><summary>他 ' + tail.length + '本を表示</summary>' + tail.map(row).join('') + '</details>';
+    }
     return html + '</div></div>';
   }
 
@@ -366,7 +382,7 @@
       '<br>黄色い枠が「そこに入る候補」。押せばルートに挟まる。';
     var html = '';
     // 最初の前
-    html += gapBlock('10:30 着 → ' + r[0].t, '最初の1本まで', feasible(OPEN, mins(r[0].t), null, r[0].s), 4, 'fill');
+    html += gapBlock('10:30 着 → ' + r[0].t, '最初の1本まで', feasible(OPEN, mins(r[0].t), null, r[0].s), 5, 'fill', [r[0].s]);
     for (var i = 0; i < r.length; i++) {
       var sh = r[i], a = D.artists[sh.a] || { jp: sh.a, kid: 0, why: '' };
       html += '<div class="card">' + showRow(sh, sh.t + '-' + sh.e + '（30分）', true) + '</div>';
@@ -379,13 +395,15 @@
           '：' + wl(w, lg.rail) + (gap < w ? '（' + gap + '分しかない・移動が間に合わない）'
             : gap === w ? '（移動してちょうど）' : '（移動後に' + (gap - w) + '分あく）') + '</div>';
         html += gapBlock(sh.t + ' の後 → ' + nx.t, stageById[sh.s].short + '発 ' + wl(w, lg.rail),
-          feasible(mins(sh.t) + 30, mins(nx.t), sh.s, nx.s), 4, 'fill');
+          feasible(mins(sh.t) + 30, mins(nx.t), sh.s, nx.s), 5, 'fill', [sh.s, nx.s]);
       }
     }
     // 最後の後
     var last = r[r.length - 1];
-    html += gapBlock(last.t + ' の後 → 19:00', stageById[last.s].short + '発',
-      feasible(mins(last.t) + 30, CLOSE, last.s, null), 8, 'next');
+    // 「この後」は2時間ぶんだけ出す。全部出すと選択肢が多すぎて絞れない。
+    var afterTo = Math.min(mins(last.t) + 30 + 120, CLOSE);
+    html += gapBlock(last.t + ' の後 → ' + hm(afterTo) + '（2時間）', stageById[last.s].short + '発',
+      feasible(mins(last.t) + 30, afterTo, last.s, null), 6, 'next', [last.s]);
     el.innerHTML = html;
   }
 
