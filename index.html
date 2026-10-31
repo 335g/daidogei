@@ -48,6 +48,7 @@
   .stage { font-size: 11px; font-weight: 700; color: #fff; border-radius: 5px; padding: 1.5px 6px; display: inline-block; margin-bottom: 3px; background: var(--blue); }
   .stage.hakubutsu { background: var(--hakubutsu); }
   .stage.gym { background: var(--gym); }
+  .stage i { font-style: normal; opacity: .78; margin-right: 4px; }
   .stage.city { background: #6d5aa6; }
   .stage.eki { background: #a25a00; }
   .move { padding: 7px 14px; font-size: 12px; color: var(--sub); background: #f2efe9; border-bottom: 1px solid var(--line); }
@@ -89,6 +90,7 @@
 
   .stageblock { background: #fff; border-radius: 14px; margin-bottom: 10px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
   .stageblock h3 { margin: 0; padding: 11px 14px; font-size: 14.5px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); gap: 8px; }
+  .stageblock h3 .no { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 10px; background: var(--blue); color: #fff; font-size: 11.5px; font-style: normal; margin-right: 7px; vertical-align: 1px; }
   .stageblock h3 .pos { font-size: 11px; font-weight: 400; color: var(--sub); white-space: nowrap; }
   .stageblock .row { display: flex; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); align-items: center; }
   .stageblock .row:last-child { border-bottom: 0; }
@@ -260,7 +262,7 @@
   }
   function stageTag(s) {
     var st = stageById[s];
-    return '<span class="stage ' + st.zone + '">' + st.short + '</span>';
+    return '<span class="stage ' + st.zone + '"><i>' + st.id + '</i>' + st.short + '</span>';
   }
   function pinBtn(s, t, on) {
     var o = on === undefined ? has(s, t) : on;
@@ -398,11 +400,11 @@
       var list = (byStage[st.id] || []).slice().sort(function (a, b) { return mins(a.t) - mins(b.t); });
       if (filter === 'kid3') list = list.filter(function (sh) { var a = D.artists[sh.a]; return a && a.kid >= 3; });
       if (st.kind === 'booth') {
-        html += '<div class="stageblock"><h3>' + st.short + '<span class="pos">' + st.pos + '</span></h3><div class="empty">' + (st.note || '') + '</div></div>';
+        html += '<div class="stageblock"><h3><span><i class="no">' + st.id + '</i>' + st.short + '</span><span class="pos">' + st.pos + '</span></h3><div class="empty">' + (st.note || '') + '</div></div>';
         return;
       }
       if (filter === 'kid3' && !list.length) return;
-      html += '<div class="stageblock"><h3>' + st.name + '<span class="pos">' + st.pos + '</span></h3>';
+      html += '<div class="stageblock"><h3><span><i class="no">' + st.id + '</i>' + st.name + '</span><span class="pos">' + st.pos + '</span></h3>';
       if (st.note) html += '<div class="empty">' + st.note + '</div>';
       if (!list.length) html += '<div class="empty">この条件の演目なし</div>';
       list.forEach(function (sh) {
