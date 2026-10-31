@@ -98,6 +98,8 @@
   .stageblock h3 { margin: 0; padding: 11px 14px; font-size: 14.5px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); gap: 8px; }
   .stageblock h3 .no { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 10px; background: var(--blue); color: #fff; font-size: 11.5px; font-style: normal; margin-right: 7px; vertical-align: 1px; }
   .stageblock h3 .pos { font-size: 11px; font-weight: 400; color: var(--sub); white-space: nowrap; }
+  .stageblock .row[data-a] { cursor: pointer; }
+  .stageblock .row[data-a]:active { background: #f0f4f8; }
   .stageblock .row { display: flex; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); align-items: center; }
   .stageblock .row:last-child { border-bottom: 0; }
   .stageblock .row .t { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--sub); width: 88px; flex: 0 0 88px; }
@@ -140,6 +142,24 @@
   .bar .cnt b { color: var(--ink); font-size: 14.5px; }
   .bar button { appearance: none; font: inherit; font-size: 14px; font-weight: 700; border: 0; cursor: pointer; background: var(--blue); color: #fff; padding: 10px 18px; border-radius: 999px; }
   .bar button:disabled { background: #c9c9cd; }
+  .item[data-a] { cursor: pointer; }
+  .item[data-a]:active { background: #f0f4f8; }
+  .sheet-back { position: fixed; inset: 0; background: rgba(0,0,0,.42); z-index: 40; opacity: 0; pointer-events: none; transition: opacity .15s; }
+  .sheet-back.on { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-width: 600px; margin: 0 auto;
+    background: #fff; border-radius: 16px 16px 0 0; max-height: 88vh; overflow-y: auto;
+    transform: translateY(102%); transition: transform .18s ease; padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  }
+  .sheet.on { transform: translateY(0); }
+  .sh-head { display: flex; gap: 12px; padding: 14px 14px 10px; align-items: flex-start; position: sticky; top: 0; background: #fff; border-bottom: 1px solid var(--line); }
+  .sh-head img { width: 84px; height: 84px; border-radius: 10px; object-fit: cover; background: #eee; flex: 0 0 84px; }
+  .sh-name { font-size: 17px; font-weight: 700; line-height: 1.35; }
+  .sh-sub { font-size: 11.5px; color: var(--sub); margin-top: 2px; }
+  .sh-close { appearance: none; border: 0; background: #f2efe9; color: var(--sub); width: 30px; height: 30px; border-radius: 50%; font-size: 17px; line-height: 1; cursor: pointer; flex: 0 0 30px; margin-left: auto; }
+  .sh-desc { font-size: 13px; color: #3c3c41; padding: 12px 14px 4px; margin: 0; }
+  .sh-label { font-size: 12px; font-weight: 700; color: var(--sub); padding: 12px 14px 4px; }
+  .sh-link { display: block; font-size: 12px; color: var(--blue); padding: 10px 14px 4px; text-decoration: none; }
   .empty { padding: 22px 16px; text-align: center; color: var(--sub); font-size: 13px; line-height: 1.7; }
   footer { text-align: center; font-size: 11px; color: var(--sub); padding: 18px 16px 8px; line-height: 1.7; }
 </style>
@@ -204,6 +224,9 @@
   </section>
 </main>
 
+<div class="sheet-back" id="sheetback"></div>
+<div class="sheet" id="sheet"></div>
+
 <div class="bar">
   <div class="cnt" id="cnt"></div>
   <button id="open-route">ルート</button>
@@ -218,7 +241,7 @@
 <script src="data.js"></script>
 <script>
 (function () {
-  var VER = 'v10';
+  var VER = 'v11';
   var D = window.DATA;
   var OPEN = 630;   // 10:30 到着
   var CLOSE = 1140; // 19:00 解散
@@ -263,6 +286,7 @@
     var k = s + '|' + t, i = pins.indexOf(k);
     if (i > -1) pins.splice(i, 1); else pins.push(k);
     save(); render();
+    if (sheetNum) renderSheet();
   }
   function route() {
     return pins.map(function (k) {
@@ -292,7 +316,7 @@
   }
   function showRow(sh, extra, fixed) {
     var a = D.artists[sh.a] || { jp: sh.a, kid: 0, why: '' };
-    return '<div class="item' + (fixed ? ' fixed' : '') + '"><div class="t">' + sh.t + '</div><div class="b">' + stageTag(sh.s) +
+    return '<div class="item' + (fixed ? ' fixed' : '') + '" data-a="' + sh.a + '"><div class="t">' + sh.t + '</div><div class="b">' + stageTag(sh.s) +
       '<div class="name">' + a.jp + ' ' + stars(a.kid) + '</div>' +
       '<div class="why">' + a.why + '</div>' +
       (extra ? '<div class="note">' + extra + '</div>' : '') + '</div>' + pinBtn(sh.s, sh.t) + '</div>';
@@ -444,7 +468,7 @@
       var times = shows.map(function (sh) {
         return '<button class="pin" style="width:auto;height:auto;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700" data-s="' + sh.s + '" data-t="' + sh.t + '">' + sh.t + '</button>';
       }).join(' ');
-      return '<div class="item"><div class="b"><div class="name">' + a.jp + ' ' + stars(a.kid) + '</div>' +
+      return '<div class="item" data-a="' + n + '"><div class="b"><div class="name">' + a.jp + ' ' + stars(a.kid) + '</div>' +
         '<div class="why">' + a.why + '</div>' +
         '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">' + times +
         '<span style="font-size:11.5px;color:#6b6b70">' + shows.map(function (sh) { return stageById[sh.s].short; })
@@ -470,7 +494,7 @@
       if (!list.length) html += '<div class="empty">この条件の演目なし</div>';
       list.forEach(function (sh) {
         var a = D.artists[sh.a] || { jp: sh.a, kid: 0 };
-        html += '<div class="row"><div class="t">' + sh.t + '-' + sh.e + '</div><div class="n">' + a.jp + ' ' + stars(a.kid) + '</div>' + pinBtn(sh.s, sh.t) + '</div>';
+        html += '<div class="row" data-a="' + sh.a + '"><div class="t">' + sh.t + '-' + sh.e + '</div><div class="n">' + a.jp + ' ' + stars(a.kid) + '</div>' + pinBtn(sh.s, sh.t) + '</div>';
       });
       html += '</div>';
     });
@@ -511,6 +535,45 @@
     }).join('<br>') + '<br><b>有料なのでプランには入れていない。</b>';
   }
 
+  var sheetNum = null;
+  function openSheet(n) {
+    sheetNum = String(n);
+    renderSheet();
+    document.getElementById('sheet').classList.add('on');
+    document.getElementById('sheetback').classList.add('on');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSheet() {
+    sheetNum = null;
+    document.getElementById('sheet').classList.remove('on');
+    document.getElementById('sheetback').classList.remove('on');
+    document.body.style.overflow = '';
+  }
+  function renderSheet() {
+    if (!sheetNum) return;
+    var a = D.artists[sheetNum];
+    var el = document.getElementById('sheet');
+    if (!a) { el.innerHTML = '<div class="empty">情報がない</div>'; return; }
+    var list = D.shows.filter(function (sh) { return sh.a === sheetNum; })
+      .sort(function (x, y) { return mins(x.t) - mins(y.t); });
+    var img = a.img ? '<img src="' + a.img + '" alt="' + a.jp + '" loading="lazy">' : '<img alt="">';
+    el.innerHTML =
+      '<div class="sh-head">' + img + '<div style="min-width:0"><div class="sh-name">' + a.jp + '</div>' +
+      '<div class="sh-sub">' + [a.en, a.country, a.genre].filter(Boolean).join(' ・ ') + '</div>' +
+      '<div style="margin-top:3px">' + (stars(a.kid) || '<span class="sh-sub">未評価</span>') + '</div></div>' +
+      '<button class="sh-close" data-close="1">×</button></div>' +
+      (a.why ? '<p class="sh-desc">' + a.why + '</p>' : '') +
+      (a.desc ? '<p class="sh-desc" style="color:#6b6b70;font-size:12.5px">' + a.desc + '</p>' : '') +
+      '<div class="sh-label">11/1(日) の出番 ' + list.length + '本</div>' +
+      list.map(function (sh) {
+        var on = has(sh.s, sh.t);
+        return '<div class="item" data-a="' + sh.a + '"><div class="t">' + sh.t + '</div><div class="b">' + stageTag(sh.s) +
+          '<div class="break" style="font-size:12.5px;color:#4a4a4f">' + sh.t + '-' + sh.e + '（30分）</div></div>' +
+          '<button class="pin' + (on ? ' on' : '') + '" data-s="' + sh.s + '" data-t="' + sh.t + '">' + (on ? '✓' : '＋') + '</button></div>';
+      }).join('') +
+      '<a class="sh-link" href="https://daidogei.com/artist2026/" target="_blank" rel="noopener">公式サイトのアーティスト一覧を開く（No.' + sheetNum + '）</a>';
+  }
+
   function render() {
     renderFix(); renderCnt(); renderStages(); renderPlans();
     document.getElementById('slots').innerHTML = slots();
@@ -519,8 +582,12 @@
   }
 
   document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-close]')) { closeSheet(); return; }
     var pin = e.target.closest('.pin[data-s]');
     if (pin) { toggle(+pin.dataset.s, pin.dataset.t); return; }
+    if (e.target.closest('#sheetback')) { closeSheet(); return; }
+    var cell = e.target.closest('.item[data-a], .row[data-a]');
+    if (cell) { openSheet(cell.dataset.a); return; }
     var pl = e.target.closest('[data-plan]');
     if (pl) {
       var p = D.plans.filter(function (x) { return x.id === pl.dataset.plan; })[0];
