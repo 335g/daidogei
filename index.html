@@ -48,6 +48,8 @@
   .stage { font-size: 11px; font-weight: 700; color: #fff; border-radius: 5px; padding: 1.5px 6px; display: inline-block; margin-bottom: 3px; background: var(--blue); }
   .stage.hakubutsu { background: var(--hakubutsu); }
   .stage.gym { background: var(--gym); }
+  .stage.city { background: #6d5aa6; }
+  .stage.eki { background: #a25a00; }
   .move { padding: 7px 14px; font-size: 12px; color: var(--sub); background: #f2efe9; border-bottom: 1px solid var(--line); }
   .move::before { content: "↓ "; }
   .move.bad { color: var(--warn); font-weight: 700; }
@@ -108,6 +110,8 @@
   .legend .lg:last-child { border-bottom: 0; }
   .legend .lg b { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 12px; flex: 0 0 22px; }
   .legend .lg.hakubutsu b { background: var(--hakubutsu); }
+  .legend .lg.city b { background: #6d5aa6; }
+  .legend .lg.eki b { background: #a25a00; }
   .legend .lg.gym b { background: var(--gym); }
   .legend .lg span.p { color: var(--sub); font-size: 11.5px; margin-left: 6px; }
 
@@ -152,7 +156,7 @@
   </section>
 
   <section id="v-find">
-    <p class="lead">見たい人が決まっているなら「アーティスト」から。時間だけ決まっているなら上の枠から。園内と歴博エリアの無料会場だけを載せている（有料プレミアムステージの出演は「地図」タブ）。</p>
+    <p class="lead">見たい人が決まっているなら「アーティスト」から。時間だけ決まっているなら上の枠から。園内→歴博→市街地の順に並ぶ（有料プレミアムステージの出演は「地図」タブ）。</p>
     <div class="slots" id="slots"></div>
     <div id="slotlist"></div>
     <div id="artists"></div>
@@ -176,7 +180,7 @@
       <img src="assets/parkmap.jpg" alt="駿府城公園エリアマップ" loading="lazy">
       <div class="legend" id="legend"></div>
     </div>
-    <p class="lead" style="margin-top:10px">園内は端から端まで徒歩5分。歴博エリア（9-12）だけ南に離れていて徒歩10分。</p>
+    <p class="lead" style="margin-top:10px">園内は端から端まで徒歩5分。歴博エリア（9-12）まで徒歩10分。市街地（13-27）は常磐公園方面まで徒歩15分、駅周辺（28-31）は徒歩20分。</p>
     <div class="memo" id="memo"></div>
     <div class="memo">
       <h3>有料ステージ</h3>
@@ -214,13 +218,19 @@
   var mins = function (t) { var p = t.split(':'); return (+p[0]) * 60 + (+p[1]); };
   var hm = function (m) { return ('0' + Math.floor(m / 60)).slice(-2) + ':' + ('0' + (m % 60)).slice(-2); };
 
+  // 徒歩の目安（分）。実際の混雑は見ていない固定値。
+  var ZRANK = { park: 0, hakubutsu: 1, gym: 2, city: 3, eki: 4 };
+  var ZIN = { park: 4, hakubutsu: 2, gym: 0, city: 5, eki: 3 };
+  var ZOUT = {
+    'hakubutsu-park': 10, 'gym-park': 6, 'city-park': 15, 'eki-park': 20,
+    'gym-hakubutsu': 16, 'city-hakubutsu': 12, 'eki-hakubutsu': 18,
+    'city-gym': 18, 'eki-gym': 22, 'city-eki': 10
+  };
   function walk(a, b) {
-    if (!a || !b) return 0;
-    if (a === b) return 0;
+    if (!a || !b || a === b) return 0;
     var A = stageById[a], B = stageById[b];
-    if (A.area === B.area) return A.area === 'hakubutsu' ? 2 : 4;
-    if (A.area === 'gym' || B.area === 'gym') return 12;
-    return 10;
+    if (A.zone === B.zone) return ZIN[A.zone] || 5;
+    return ZOUT[[A.zone, B.zone].sort().join('-')] || 15;
   }
 
   // ---- pinned ----
@@ -243,14 +253,14 @@
 
   function wl(w) { return w === null ? '' : (w ? '徒歩' + w + '分' : '同じ場所'); }
   function stars(k) {
+    if (!k) return '';
     if (k >= 3) return '<span class="stars">★★★</span>';
     if (k === 2) return '<span class="stars s2">★★☆</span>';
     return '<span class="stars s1">★☆☆</span>';
   }
   function stageTag(s) {
     var st = stageById[s];
-    var cls = st.area === 'hakubutsu' ? ' hakubutsu' : (st.area === 'gym' ? ' gym' : '');
-    return '<span class="stage' + cls + '">' + st.short + '</span>';
+    return '<span class="stage ' + st.zone + '">' + st.short + '</span>';
   }
   function pinBtn(s, t, on) {
     var o = on === undefined ? has(s, t) : on;
@@ -273,7 +283,11 @@
       var t = mins(sh.t);
       return t >= fromM + w1 && t + 30 + w2 <= toM;
     }).map(function (sh) {
-      return { sh: sh, w: fromStage ? walk(fromStage, sh.s) : null, kid: (D.artists[sh.a] || {}).kid || 0 };
+      return {
+        sh: sh,
+        w: fromStage ? walk(fromStage, sh.s) : (toStage ? walk(sh.s, toStage) : null),
+        kid: (D.artists[sh.a] || {}).kid || 0
+      };
     }).sort(function (a, b) {
       return (b.kid - a.kid) || ((a.w || 0) - (b.w || 0)) || (mins(a.sh.t) - mins(b.sh.t));
     });
@@ -350,7 +364,8 @@
     }).join('');
   }
   function slotList() {
-    var list = D.shows.filter(function (sh) { return sh.t === slot; }).sort(function (a, b) { return a.s - b.s; });
+    var list = D.shows.filter(function (sh) { return sh.t === slot; })
+      .sort(function (a, b) { return (ZRANK[stageById[a.s].zone] - ZRANK[stageById[b.s].zone]) || (a.s - b.s); });
     if (!list.length) return '<div class="card"><div class="empty">この時間に始まる演目はない。</div></div>';
     return '<div class="card">' + list.map(function (sh) { return showRow(sh); }).join('') + '</div>';
   }
@@ -379,7 +394,7 @@
   var filter = 'all';
   function renderStages() {
     var html = '';
-    D.stages.slice().sort(function (a, b) { return a.id - b.id; }).forEach(function (st) {
+    D.stages.slice().sort(function (a, b) { return (ZRANK[a.zone] - ZRANK[b.zone]) || (a.id - b.id); }).forEach(function (st) {
       var list = (byStage[st.id] || []).slice().sort(function (a, b) { return mins(a.t) - mins(b.t); });
       if (filter === 'kid3') list = list.filter(function (sh) { var a = D.artists[sh.a]; return a && a.kid >= 3; });
       if (st.kind === 'booth') {
@@ -419,9 +434,8 @@
   }
 
   function renderLegend() {
-    document.getElementById('legend').innerHTML = D.stages.map(function (st) {
-      var cls = st.area === 'hakubutsu' ? 'hakubutsu' : (st.area === 'gym' ? 'gym' : '');
-      return '<div class="lg ' + cls + '"><b>' + st.id + '</b><div>' + st.name +
+    document.getElementById('legend').innerHTML = D.stages.filter(function (st) { return st.id <= 12; }).map(function (st) {
+      return '<div class="lg ' + st.zone + '"><b>' + st.id + '</b><div>' + st.name +
         '<span class="p">' + st.pos + (st.kind === 'paid' ? '・有料' : '') + '</span></div></div>';
     }).join('');
   }
