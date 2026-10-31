@@ -219,6 +219,7 @@
       <div style="font-size:12.5px;color:#4a4a4f;margin-top:4px">演目の顔写真78枚を保存します（合計30MBほど）。Wi-Fiで一度押しておくと、現地で電波が細くても写真が出ます。</div>
       <div id="dlstate" style="font-size:12px;color:#6b6b70;margin:6px 0 8px"></div>
       <button id="dlbtn" style="width:100%;appearance:none;font:inherit;font-size:14px;font-weight:700;border:0;border-radius:10px;padding:11px;background:var(--blue);color:#fff;cursor:pointer">写真をまとめて保存</button>
+      <button id="clrbtn" style="width:100%;appearance:none;font:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:10px;padding:9px;margin-top:8px;background:#fff;color:var(--sub);cursor:pointer">保存したデータを全部消す</button>
     </div>
     <div class="mapwrap">
       <img src="assets/parkmap.jpg" alt="駿府城公園エリアマップ" loading="lazy">
@@ -255,7 +256,7 @@
 <script src="data.js"></script>
 <script>
 (function () {
-  var VER = 'v16';
+  var VER = 'v17';
   var D = window.DATA;
   var OPEN = 630;   // 10:30 到着
   var CLOSE = 1140; // 19:00 解散
@@ -629,8 +630,11 @@
   function photoUrls() { return Object.keys(D.artists).map(function (n) { return D.artists[n].img; }).filter(Boolean); }
   function dlState() {
     if (!window.caches) return Promise.resolve(-1);
-    return caches.open(PHOTO_CACHE).then(function (c) { return c.keys(); })
-      .then(function (keys) { return keys.length; }).catch(function () { return -1; });
+    return caches.has(PHOTO_CACHE).then(function (there) {
+      if (!there) return 0;
+      return caches.open(PHOTO_CACHE).then(function (c) { return c.keys(); })
+        .then(function (keys) { return keys.length; });
+    }).catch(function () { return -1; });
   }
   function renderDlState(n) {
     var el = document.getElementById('dlstate');
@@ -664,6 +668,32 @@
         }).catch(function () { fail++; }).then(step);
       }
       step();
+    });
+  }
+
+  function clearAll() {
+    if (!window.confirm('保存した写真（約30MB）・選択中のルート・オフライン用のデータをこの端末から削除します。元に戻せません。')) return;
+    var btn = document.getElementById('clrbtn');
+    btn.disabled = true;
+    btn.textContent = '削除中…';
+    var removed = 0;
+    var work = window.caches
+      ? caches.keys().then(function (keys) {
+          return Promise.all(keys.filter(function (k) { return k.indexOf('daidogei2026') === 0; })
+            .map(function (k) { removed++; return caches.delete(k); }));
+        }).catch(function () {})
+      : Promise.resolve();
+    work.then(function () {
+      pins = []; save();
+      closeSheet();
+      render();
+      btn.disabled = false;
+      btn.textContent = '保存したデータを全部消す';
+      dlState().then(function (n) {
+        renderDlState(n);
+        var el = document.getElementById('dlstate');
+        if (el) el.textContent = '削除しました（保存データ' + removed + '件と選択中のルート）。次に通信できるときに読み込むと、また保存できます。';
+      });
     });
   }
 
@@ -758,6 +788,7 @@
   document.getElementById('open-route').addEventListener('click', function () { go('fix'); });
   document.getElementById('nowbtn').addEventListener('click', function () { nowOpen = !nowOpen; render(); });
   document.getElementById('dlbtn').addEventListener('click', downloadPhotos);
+  document.getElementById('clrbtn').addEventListener('click', clearAll);
   dlState().then(renderDlState);
 
   renderLegend(); renderMemo(); render();
