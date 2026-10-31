@@ -98,6 +98,14 @@
   .slots button.on { background: var(--blue); border-color: var(--blue); color: #fff; }
   .slots button .d { display: block; font-size: 9.5px; font-weight: 400; opacity: .8; }
 
+  .sec-title { font-size: 13px; font-weight: 700; margin: 0 4px 8px; line-height: 1.5; }
+  .sec-title span { font-weight: 400; color: var(--sub); font-size: 11.5px; margin-left: 4px; }
+  .split { border-top: 1px solid var(--line); margin: 22px 4px 18px; }
+  .filterinput {
+    width: 100%; font: inherit; font-size: 14px; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid var(--line); background: #fff; margin: 0 0 10px; -webkit-appearance: none;
+  }
+  .filterinput:focus { outline: 2px solid rgba(15,111,181,.35); border-color: var(--blue); }
   .filters { display: flex; gap: 8px; padding: 0 4px 10px; }
   .filters button {
     appearance: none; font: inherit; font-size: 13px; padding: 6px 13px; border-radius: 999px;
@@ -199,9 +207,12 @@
   </section>
 
   <section id="v-find">
-    <p class="lead">見たい人が決まっているなら「アーティスト」から。時間だけ決まっているなら上の枠から。園内→歴博→市街地の順に並ぶ（有料プレミアムステージの出演は「地図」タブ）。</p>
+    <div class="sec-title">時間から<span>枠を選ぶと、その時刻に始まる演目だけ出る</span></div>
     <div class="slots" id="slots"></div>
     <div id="slotlist"></div>
+    <div class="split"></div>
+    <div class="sec-title">アーティストから<span>名前で絞って、その人の出番だけ見る</span></div>
+    <input id="artfilter" class="filterinput" type="search" placeholder="名前・番号で絞る（例: HARIBOW、17）">
     <div id="artists"></div>
   </section>
 
@@ -261,7 +272,7 @@
 <script src="data.js"></script>
 <script>
 (function () {
-  var VER = 'v21';
+  var VER = 'v22';
   var D = window.DATA;
   var stageById = {};
   D.stages.forEach(function (s) { stageById[s.id] = s; });
@@ -570,11 +581,15 @@
   }
   // ---- 探す：アーティスト ----
   function artistList() {
+    var q = ((document.getElementById('artfilter') || {}).value || '').trim().toLowerCase();
     var nums = Object.keys(D.artists).filter(function (n) {
-      return shows().some(function (sh) { return sh.a === n; });
+      if (!shows().some(function (sh) { return sh.a === n; })) return false;
+      if (!q) return true;
+      var a = D.artists[n];
+      return (a.jp + a.en + n).toLowerCase().indexOf(q) > -1;
     }).sort(function (a, b) { return (D.artists[b].kid - D.artists[a].kid) || (D.artists[a].jp < D.artists[b].jp ? -1 : 1); });
-    var html = '<div class="sec-title">アーティストから <span>その人の出番だけ出る</span></div>';
-    html += '<div class="card">' + nums.map(function (n) {
+    if (!nums.length) return '<div class="card"><div class="empty">その名前のアーティストは今日はいない。</div></div>';
+    var html = '<div class="card">' + nums.map(function (n) {
       var a = D.artists[n];
       var list = dayShows(n);
       var times = list.map(function (sh) {
@@ -818,6 +833,9 @@
   }
   document.getElementById('open-route').addEventListener('click', function () { go('fix'); });
   document.getElementById('nowbtn').addEventListener('click', function () { nowOpen = !nowOpen; render(); });
+  document.getElementById('artfilter').addEventListener('input', function () {
+    document.getElementById('artists').innerHTML = artistList();
+  });
   document.getElementById('dlbtn').addEventListener('click', downloadPhotos);
   document.getElementById('clrbtn').addEventListener('click', clearAll);
   dlState().then(renderDlState);
