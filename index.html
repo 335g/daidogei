@@ -208,11 +208,13 @@
 <footer>
   公式PDF（schedule2026_1014.pdf DAY2）から作成。演目は各30分。<br>
   出演者・時間は変更される場合があります。現地の掲示を優先してください。
+  <div id="ver" style="margin-top:6px;opacity:.7"></div>
 </footer>
 
 <script src="data.js"></script>
 <script>
 (function () {
+  var VER = 'v8';
   var D = window.DATA;
   var OPEN = 630;   // 10:30 到着
   var CLOSE = 1140; // 19:00 解散
@@ -525,6 +527,7 @@
   document.getElementById('open-route').addEventListener('click', function () { go('fix'); });
 
   renderLegend(); renderMemo(); render();
+  document.getElementById('ver').textContent = '表示バージョン ' + VER;
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
   var h = (location.hash || '').replace('#', '');
   if (['fix', 'find', 'time', 'plan', 'map'].indexOf(h) > -1) go(h);
