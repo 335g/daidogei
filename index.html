@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>大道芸ワールドカップin静岡 2026 スケジュール | 駿府城公園エリア</title>
+<title>大道芸ワールドカップin静岡 スケジュール | 駿府城公園エリア</title>
 <meta name="theme-color" content="#0f6fb5">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤹</text></svg>">
 <style>
@@ -186,8 +186,8 @@
 <body>
 
 <header>
-  <h1>大道芸ワールドカップin静岡 2026</h1>
-  <p>駿府城公園エリア ・ 全31会場 ・ 演目は各30分</p>
+  <h1 id="festname">大道芸ワールドカップin静岡</h1>
+  <p id="festsub"></p>
   <div class="days" id="days"></div>
 </header>
 
@@ -264,7 +264,7 @@
 </div>
 
 <footer>
-  公式PDF（schedule2026_1014.pdf のDAY1-4）とアーティストページから作成。演目は各30分。<br>
+  <span id="source"></span><br>
   出演者・時間は変更される場合があります。現地の掲示を優先してください。
   <div id="ver" style="margin-top:6px;opacity:.7"></div>
 </footer>
@@ -272,7 +272,7 @@
 <script src="data.js"></script>
 <script>
 (function () {
-  var VER = 'v22';
+  var VER = 'v24';
   var D = window.DATA;
   var stageById = {};
   D.stages.forEach(function (s) { stageById[s.id] = s; });
@@ -328,9 +328,17 @@
   function walk(a, b) { return leg(a, b).m; }
 
   // ---- pinned ----
-  var KEY = 'daidogei2026.pins.v2';
+  var KEY = 'daidogei.pins.v2';
+  var OLD_KEY = 'daidogei2026.pins.v2';
   var pins = [];
-  try { pins = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { pins = []; }
+  try {
+    pins = JSON.parse(localStorage.getItem(KEY) || '[]');
+    // 年つきキーの時代の選択を引き継ぐ
+    if (!pins.length) {
+      var old = JSON.parse(localStorage.getItem(OLD_KEY) || '[]');
+      if (old.length) { pins = old; localStorage.setItem(KEY, JSON.stringify(pins)); }
+    }
+  } catch (e) { pins = []; }
   var save = function () { try { localStorage.setItem(KEY, JSON.stringify(pins)); } catch (e) {} };
   var keyOf = function (s, t) { return dayInfo().id + '|' + s + '|' + t; };
   var has = function (s, t) { return pins.indexOf(keyOf(s, t)) > -1; };
@@ -672,7 +680,7 @@
     return shows().filter(function (sh) { return sh.a === n; }).sort(function (x, y) { return mins(x.t) - mins(y.t); });
   }
   // --- 写真の事前保存 ---
-  var PHOTO_CACHE = 'daidogei2026-photos';
+  var PHOTO_CACHE = 'daidogei-photos';
   function photoUrls() { return Object.keys(D.artists).map(function (n) { return D.artists[n].img; }).filter(Boolean); }
   function dlState() {
     if (!window.caches) return Promise.resolve(-1);
@@ -725,7 +733,7 @@
     var removed = 0;
     var work = window.caches
       ? caches.keys().then(function (keys) {
-          return Promise.all(keys.filter(function (k) { return k.indexOf('daidogei2026') === 0; })
+          return Promise.all(keys.filter(function (k) { return k.indexOf('daidogei') === 0; })
             .map(function (k) { removed++; return caches.delete(k); }));
         }).catch(function () {})
       : Promise.resolve();
@@ -779,7 +787,7 @@
           '<div class="break" style="font-size:12.5px;color:#4a4a4f">' + sh.t + '-' + sh.e + '（30分）</div></div>' +
           '<button class="pin' + (on ? ' on' : '') + '" data-s="' + sh.s + '" data-t="' + sh.t + '">' + (on ? '✓' : '＋') + '</button></div>';
       }).join('') +
-      '<a class="sh-link" href="https://daidogei.com/artist2026/" target="_blank" rel="noopener">公式サイトのアーティスト一覧を開く（No.' + sheetNum + '）</a>';
+      '<a class="sh-link" href="' + D.festival.artistPage + '" target="_blank" rel="noopener">公式サイトのアーティスト一覧を開く（No.' + sheetNum + '）</a>';
   }
 
   function renderDays() {
@@ -842,6 +850,11 @@
 
   renderLegend(); renderMemo(); render();
   document.getElementById('ver').textContent = '表示バージョン ' + VER;
+  document.getElementById('festname').textContent = D.festival.name;
+  document.getElementById('festsub').textContent =
+    D.festival.year + '年 ・ 駿府城公園エリア ・ 全' + D.stages.length + '会場 ・ 演目は各30分';
+  document.getElementById('source').textContent =
+    '出典: ' + D.festival.year + '年の公式スケジュールPDFとアーティストページ。演目は各30分。';
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
   // 開きっぱなしでもボタンの時刻は進む。候補は押し直すと作り直す。
   setInterval(function () { if (!nowOpen) renderNowBtn(); }, 60000);

@@ -1,6 +1,13 @@
-// 大道芸ワールドカップin静岡 2026 / 10月31日-11月3日
-// 出典: schedule2026_1014.pdf（DAY1-4）+ artist2026ページ
+// 大道芸ワールドカップin静岡 — 開催年のデータ
+// 出典: 公式スケジュールPDF（DAY1-4）+ 公式アーティストページ
 window.DATA = {
+ "festival": {
+  "name": "大道芸ワールドカップin静岡",
+  "year": "2026",
+  "artistPage": "https://daidogei.com/artist2026/",
+  "schedulePdf": "https://cdn.daidogei.com/common/todays-guide/schedule2026_1014.pdf",
+  "mapPdf": "https://cdn.daidogei.com/common/todays-guide/guidemap2026.pdf"
+ },
  "days": [
   {
    "id": "10-31",

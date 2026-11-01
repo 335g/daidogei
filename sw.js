@@ -1,5 +1,5 @@
-const CACHE = 'daidogei2026-v22';
-const PHOTOS = 'daidogei2026-photos';
+const CACHE = 'daidogei-v2';
+const PHOTOS = 'daidogei-photos';
 const FILES = ['./', './index.html', './data.js', './assets/parkmap.jpg'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
@@ -7,7 +7,7 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys()
     .then((keys) => Promise.all(keys
-      .filter((k) => k !== CACHE && k !== PHOTOS && k.indexOf('daidogei2026') === 0)
+      .filter((k) => k !== CACHE && k !== PHOTOS && k.indexOf("daidogei") === 0)
       .map((k) => caches.delete(k))))
     .then(() => self.clients.claim()));
 });

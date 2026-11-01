@@ -1,0 +1,11 @@
+{
+  "name": "daidogei-schedule",
+  "private": true,
+  "description": "大道芸ワールドカップin静岡 スケジュール（静的サイト）",
+  "scripts": {
+    "extract": "node tools/extract-schedule.mjs"
+  },
+  "devDependencies": {
+    "pdfjs-dist": "^4.8.69"
+  }
+}
